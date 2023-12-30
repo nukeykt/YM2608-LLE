@@ -90,6 +90,7 @@ typedef struct {
     int addr_29[2];
     int addr_ff[2];
 
+    int reg_mask[2];
     int reg_test_12[2];
     int reg_test_21[2];
     int reg_lfo[2];
@@ -110,6 +111,45 @@ typedef struct {
     int fm_data[2];
     int write_fm_address[2];
     int write_fm_data[2]; 
+    int reg_cnt1[2];
+    int reg_cnt2[2];
+    int reg_cnt_sync;
+    int reg_cnt_rss[2];
+    int reg_cnt_rss_of;
+    int reg_key_cnt1[2];
+    int reg_key_cnt2[2];
+    int rss_18;
+    int reg_kon_match;
+    int reg_kon[4][2];
+    int kon_comb;
+    int reg_ch3_sel;
+    int ch3_en;
+    int ch3_csm;
+    int ch3_csm_load;
+    int reg_csm_l;
+    int reg_sync_timer;
+    int reg_sync_timer_l[2];
+    int reg_sync_timer_load;
+
+    int timer_a_cnt[2];
+    int timer_a_of[2];
+    int timer_a_load;
+    int timer_a_reg_load;
+    int timer_a_reg_load_l[2];
+    int timer_a_status[2];
+    int timer_b_subcnt[2];
+    int timer_b_subcnt_of[2];
+    int timer_b_cnt[2];
+    int timer_b_of[2];
+    int timer_b_load;
+    int timer_b_reg_load;
+    int timer_b_reg_load_l[2];
+    int timer_b_status[2];
+
+    int irq_eos_l;
+    int irq_mask_eos;
+    int irq_mask_brdy;
+    int irq_mask_zero;
 
     int fm_is30;
     int fm_is40;
@@ -128,6 +168,29 @@ typedef struct {
     int fsm_cnt1[2];
     int fsm_cnt2[2];
     int fsm_out[22];
+    int fsm_op1_sel_l;
+    int fsm_op2_sel_l;
+    int fsm_op3_sel_l;
+    int fsm_op4_sel_l;
+    int fsm_connect;
+    int alg_mod_op1_0_l;
+    int alg_mod_op1_1_l;
+    int alg_mod_op2_l;
+    int alg_mod_prev_0_l;
+    int alg_mod_prev_1_l;
+    int alg_output_l;
+    int alg_do_fb[2];
+    int alg_load_fb;
+    int fsm_rss;
+    int fsm_rss2;
+    int fsm_sel0[2];
+    int fsm_sel1[2];
+    int fsm_sel2[2];
+    int fsm_sel12[2];
+    int fsm_sel23[2];
+    int fsm_sel_ch3[2];
+    int fsm_sh1[2];
+    int fsm_sh2[2];
 
     int tm_w1;
     int tm_w2;
