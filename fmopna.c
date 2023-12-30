@@ -1,3 +1,4 @@
+#include <string.h>
 #include "fmopna.h"
 #include "fmopna_rom.h"
 
@@ -569,6 +570,66 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
 
             chip->timer_b_status[0] |= !rst_b && (chip->reg_mask[1] & 2) == 0
                 && chip->reg_timer_b_enable[1] && chip->timer_b_of[1];
+
+            memcpy(&chip->reg_freq[0][1], &chip->reg_freq[1][1], 5 * sizeof(unsigned short));
+            memcpy(&chip->reg_freq_3ch[0][1], &chip->reg_freq_3ch[1][1], 5 * sizeof(unsigned short));
+            memcpy(&chip->reg_connect_fb[0][1], &chip->reg_connect_fb[1][1], 5 * sizeof(unsigned char));
+            memcpy(&chip->reg_b4[0][1], &chip->reg_b4[1][1], 5 * sizeof(unsigned char));
+
+            if (chip->ic)
+            {
+                chip->reg_a4[0] = 0;
+                chip->reg_freq[0][0] = 0;
+                chip->reg_ac[0] = 0;
+                chip->reg_freq_3ch[0][0] = 0;
+                chip->reg_connect_fb[0][0] = 0;
+                chip->reg_b4[0][0] = 0xc0;
+            }
+            else
+            {
+                chip->reg_a4[0] = chip->fm_isa4 ? (chip->fm_data[1] & 0x3f) : chip->reg_a4[1];
+                chip->reg_freq[0][0] = chip->fm_isa0 ? (chip->fm_data[1] & 0xff) | (chip->reg_a4[1] << 8) : chip->reg_freq[1][5];
+                chip->reg_ac[0] = chip->fm_isac ? (chip->fm_data[1] & 0x3f) : chip->reg_ac[1];
+                chip->reg_freq_3ch[0][0] = chip->fm_isa8 ? (chip->fm_data[1] & 0xff) | (chip->reg_ac[1] << 8) : chip->reg_freq_3ch[1][5];
+                chip->reg_connect_fb[0][0] = chip->fm_isb0 ? (chip->fm_data[1] & 0x3f) : chip->reg_connect_fb[1][5];
+                chip->reg_b4[0][0] = chip->fm_isb4 ? (chip->fm_data[1] & 0xf7) : chip->reg_b4[1][5];
+            }
+
+            int rst_cc = chip->ic || chip->ch_cnt_sync;
+            int cc_of = (chip->ch_cnt1[1] & 2) != 0;
+
+            chip->ch_cnt1[0] = (rst_cc || cc_of) ? 0 : (chip->ch_cnt1[1] + 1) & 3;
+            chip->ch_cnt2[0] = rst_cc ? 0 : (chip->ch_cnt2[1] + cc_of) & 7;
+
+            int cc_cnt = (chip->ch_cnt2[1] << 2) | chip->ch_cnt1[1];
+
+
+            int freq;
+            if (chip->ch3_en && cc_cnt == 1)
+                freq = chip->reg_freq_3ch[1][5];
+            else if (chip->ch3_en && cc_cnt == 9)
+                freq = chip->reg_freq_3ch[1][0];
+            else if (chip->ch3_en && cc_cnt == 17)
+                freq = chip->reg_freq_3ch[1][4];
+            else
+                freq = chip->reg_freq[1][4];
+
+            chip->fnum[0] = freq & 0x7ff;
+            chip->kcode[0] = ((freq >> 11) & 7) << 2;
+            if (freq & 0x400)
+            {
+                chip->kcode[0] |= 2;
+                if ((freq & 0x380) != 0)
+                    chip->kcode[0] |= 1;
+            }
+            else
+            {
+                if ((freq & 0x380) == 0x380)
+                    chip->kcode[0] |= 1;
+            }
+
+            chip->fnum[2] = chip->fnum[1];
+            chip->kcode[2] = chip->kcode[1];
         }
         if (chip->clk2)
         {
@@ -691,6 +752,25 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             chip->timer_b_status[1] = chip->timer_b_status[0];
 
             chip->irq_eos_l = chip->tm_w1;
+
+
+            memcpy(&chip->reg_freq[1][0], &chip->reg_freq[0][0], 6 * sizeof(unsigned short));
+            memcpy(&chip->reg_freq_3ch[1][0], &chip->reg_freq_3ch[0][0], 6 * sizeof(unsigned short));
+            memcpy(&chip->reg_connect_fb[1][0], &chip->reg_connect_fb[0][0], 6 * sizeof(unsigned char));
+            memcpy(&chip->reg_b4[1][0], &chip->reg_b4[0][0], 6 * sizeof(unsigned char));
+
+            chip->reg_a4[1] = chip->reg_a4[0];
+            chip->reg_ac[1] = chip->reg_ac[0];
+
+            chip->ch_cnt_sync = chip->fsm_sel23[1];
+
+            chip->ch_cnt1[1] = chip->ch_cnt1[0];
+            chip->ch_cnt2[1] = chip->ch_cnt2[0];
+
+            chip->fnum[1] = chip->fnum[0];
+            chip->fnum[3] = chip->fnum[2];
+            chip->kcode[1] = chip->kcode[0];
+            chip->kcode[3] = chip->kcode[2];
         }
 
         {

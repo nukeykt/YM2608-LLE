@@ -165,6 +165,18 @@ typedef struct {
     int fm_isb0;
     int fm_isb4;
 
+    int reg_a4[2];
+    unsigned short reg_freq[2][6];
+    int reg_ac[2];
+    unsigned short reg_freq_3ch[2][6];
+    unsigned char reg_connect_fb[2][6];
+    unsigned char reg_b4[2][6];
+    int fnum[4];
+    int kcode[4];
+    int ch_cnt_sync;
+    int ch_cnt1[2];
+    int ch_cnt2[2];
+
     int fsm_cnt1[2];
     int fsm_cnt2[2];
     int fsm_out[22];
