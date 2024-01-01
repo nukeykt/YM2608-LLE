@@ -176,6 +176,14 @@ typedef struct {
     int ch_cnt_sync;
     int ch_cnt1[2];
     int ch_cnt2[2];
+    unsigned char reg_rss[2][6];
+    unsigned char op_multi_dt[2][12][2];
+    unsigned char op_tl[2][12][2];
+    unsigned char op_ar_ks[2][12][2];
+    unsigned char op_dr_a[2][12][2];
+    unsigned char op_sr[2][12][2];
+    unsigned char op_rr_sl[2][12][2];
+    unsigned char op_ssg[2][12][2];
 
     int fsm_cnt1[2];
     int fsm_cnt2[2];
@@ -203,6 +211,22 @@ typedef struct {
     int fsm_sel_ch3[2];
     int fsm_sh1[2];
     int fsm_sh2[2];
+
+    int lfo_sync[4];
+    int lfo_subcnt[2];
+    int lfo_subcnt_of;
+    int lfo_cnt_rst;
+    int lfo_cnt[2];
+    int lfo_cnt_of;
+    int lfo_mode;
+    int lfo_cnt_load;
+    int lfo_fnum1;
+    int lfo_fnum2;
+    int lfo_shift;
+    int lfo_sign;
+    int lfo_pm;
+    int lfo_fnum;
+    int lfo_am;
 
     int tm_w1;
     int tm_w2;
