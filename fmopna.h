@@ -228,6 +228,25 @@ typedef struct {
     int lfo_fnum;
     int lfo_am;
 
+    int pg_block;
+    int pg_freq;
+    int pg_dt_multi;
+    int pg_dt_add;
+    int pg_freqdt[2];
+    int pg_multi[5];
+    int pg_add[6];
+    int pg_reset[4];
+    int pg_phase[2][23];
+    int pg_phase2[2];
+    int pg_out;
+    int dt_add1;
+    int dt_add2;
+    int dt_enable[2];
+    int dt_sum;
+    int dt_blockmax[2];
+    int dt_note[2];
+    int dt_sign[2];
+
     int tm_w1;
     int tm_w2;
     int tm_w3;

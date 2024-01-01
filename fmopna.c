@@ -968,7 +968,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
 
             chip->lfo_sync[1] = chip->lfo_sync[0];
             chip->lfo_sync[3] = chip->lfo_sync[2];
-            
+
             // LFO shift
             static const int pg_lfo_sh1[8][8] = {
                 { 7, 7, 7, 7, 7, 7, 7, 7 },
@@ -982,7 +982,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             };
 
 #if 0
-            // YM2608/YM2610 decap, doesn't match YM2608 hardware tests though
+            // YM2608/YM2610 decap, doesn't match YM2608 nor YM2610 hardware tests though
             static const int pg_lfo_sh2[8][8] = {
                 { 7, 7, 7, 7, 7, 7, 7, 7 },
                 { 7, 7, 7, 7, 2, 2, 2, 2 },
@@ -995,7 +995,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             };
 #endif
 #if 1
-            // YM2612 decap, matches to YM2608 hardware tests O_O
+            // YM2612/YM3438 decap, matches to YM2608 and YM2610 hardware tests O_O
             static const int pg_lfo_sh2[8][8] = {
                 { 7, 7, 7, 7, 7, 7, 7, 7 },
                 { 7, 7, 7, 7, 2, 2, 2, 2 },
@@ -1055,6 +1055,97 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             chip->lfo_pm = (chip->lfo_fnum1 + chip->lfo_fnum2) >> chip->lfo_shift;
             if (chip->lfo_sign)
                 chip->lfo_pm = -chip->lfo_pm;
+        }
+    }
+
+
+    {
+        if (chip->clk1)
+        {
+            chip->pg_block = chip->kcode[3] >> 2;
+
+            chip->pg_dt_multi = (chip->reg_key_cnt2[1] & 4) == 0 ? chip->op_multi_dt[1][5][0]
+                : chip->op_multi_dt[1][5][1];
+
+            chip->dt_note[1] = chip->dt_note[0];
+            chip->dt_blockmax[1] = chip->chip->dt_blockmax[0];
+
+            chip->dt_enable[1] = chip->dt_enable[0];
+
+            chip->dt_sign[1] = chip->dt_sign[0];
+
+            chip->dt_sum = chip->dt_add1 + chip->dt_add2 + 1;
+
+            chip->pg_freqdt[0] = (chip->pg_freq + chip->pg_dt_add) & 0x1ffff;
+
+            chip->pg_multi[1] = chip->pg_multi[0];
+            chip->pg_multi[3] = chip->pg_multi[2];
+
+            chip->pg_add[0] = chip->pg_multi[4] ? chip->pg_freqdt[1] * chip->pg_multi[4] :
+                (chip->pg_freqdt[1] >> 1);
+            chip->pg_add[2] = chip->pg_add[1];
+            chip->pg_add[4] = chip->pg_add[3];
+
+            chip->pg_reset[1] = chip->pg_reset[0];
+            chip->pg_reset[3] = chip->pg_reset[2];
+
+            memcpy(&chip->pg_phase[0][1], &chip->pg_phase[1][0], 22 * 2 * sizeof(int));
+
+            chip->pg_phase2[0] = chip->pg_phase[1][22];
+
+            chip->pg_phase[0][0] = (chip->pg_phase2[1] + chip->pg_add[5]) & 0xfffff;
+
+        }
+        if (chip->clk2)
+        {
+            chip->pg_freq = (chip->lfo_fnum << chip->pg_block) >> 2;
+
+            chip->dt_note[0] = chip->kcode[2] & 3;
+            chip->dt_blockmax[0] = (chip->kcode[2] & 28) == 28;
+            chip->dt_add1 = (chip->kcode[2] >> 2) & 7;
+            if ((chip->pg_dt_multi & 0x30) != 0)
+                chip->dt_add1 |= 8;
+            chip->dt_add2 = 0;
+            if ((chip->pg_dt_multi & 0x30) == 0x30)
+                chip->dt_add2 |= 1;
+            if (chip->pg_dt_multi & 0x20)
+                chip->dt_add2 |= 2;
+
+            chip->dt_enable[0] = (chip->pg_dt_multi & 0x30) != 0;
+
+            chip->dt_sign[0] = (chip->pg_dt_multi & 0x40) != 0;
+
+            int dt_l = (chip->dt_sum & 1) << 2;
+            if (!chip->dt_blockmax[1])
+                dt_l |= chip->dt_note[1];
+            int dt_h = chip->dt_sum >> 1;
+
+            static const int pg_detune[8] = { 16, 17, 19, 20, 22, 24, 27, 29 };
+
+            int dt_freq = pg_detune[dt_l] >> (9 - dt_h);
+
+            if (chip->dt_sign[1])
+                dt_freq = -dt_freq;
+
+            chip->pg_dt_add = dt_freq;
+
+            chip->pg_multi[0] = chip->pg_dt_multi & 15;
+            chip->pg_multi[2] = chip->pg_multi[1];
+            chip->pg_multi[4] = chip->pg_multi[3];
+
+            chip->pg_freqdt[1] = chip->pg_freqdt[0];
+
+            chip->pg_add[1] = chip->pg_add[0];
+            chip->pg_add[3] = chip->pg_reset[1] ? 0 : chip->pg_add[2];
+            chip->pg_add[5] = chip->pg_add[4];
+
+            chip->pg_reset[0] = chip->tm_w1;
+            chip->pg_reset[2] = chip->pg_reset[1];
+            memcpy(&chip->pg_phase[1][0], &chip->pg_phase[0][0], 23 * 2 * sizeof(int));
+
+            chip->pg_out = chip->pg_phase[1][18] >> 10;
+
+            chip->pg_phase2[1] = chip->pg_reset[3] ? 0 : chip->pg_phase2[0];
         }
     }
 }
