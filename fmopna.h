@@ -207,7 +207,7 @@ typedef struct {
     int fsm_sel0[2];
     int fsm_sel1[2];
     int fsm_sel2[2];
-    int fsm_sel12[2];
+    int fsm_sel11[2];
     int fsm_sel23[2];
     int fsm_sel_ch3[2];
     int fsm_sh1[2];
@@ -360,6 +360,16 @@ typedef struct {
     int op_mod_sum;
     int op_do_fb;
     int op_fb;
+
+
+    int ssg_prescaler1[2];
+    int ssg_prescaler2[2];
+    int ssg_div1[2];
+    int ssg_div2[2];
+    int ssg_div3[2];
+    int ssg_clk;
+    int ssg_clk1;
+    int ssg_clk2;
 
 
     int tm_w1;

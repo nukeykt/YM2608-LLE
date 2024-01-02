@@ -831,7 +831,6 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             chip->irq_mask_zero = (chip->reg_mask[1] & 16) != 0 || irq_rst;
         }
 
-#undef ADDRESS_MATCH
     }
 
     {
@@ -918,7 +917,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             chip->fsm_sel0[1] = chip->fsm_sel0[0];
             chip->fsm_sel1[1] = chip->fsm_sel1[0];
             chip->fsm_sel2[1] = chip->fsm_sel2[0];
-            chip->fsm_sel12[1] = chip->fsm_sel12[0];
+            chip->fsm_sel11[1] = chip->fsm_sel11[0];
             chip->fsm_sel23[1] = chip->fsm_sel23[0];
             chip->fsm_sel_ch3[1] = chip->fsm_sel_ch3[0];
             chip->fsm_sh1[1] = chip->fsm_sh1[0];
@@ -943,7 +942,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             chip->fsm_sel0[0] = chip->fsm_out[12];
             chip->fsm_sel1[0] = chip->fsm_out[13];
             chip->fsm_sel2[0] = chip->fsm_out[14];
-            chip->fsm_sel12[0] = chip->fsm_out[15];
+            chip->fsm_sel11[0] = chip->fsm_out[15];
             chip->fsm_sel23[0] = chip->fsm_out[16];
             chip->fsm_sel_ch3[0] = chip->fsm_out[17];
             chip->fsm_sh1[0] = chip->fsm_out[18] || chip->fsm_out[19];
@@ -1750,11 +1749,74 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             memcpy(&chip->op_op1_0[1][0], &chip->op_op1_0[0][0], 6 * sizeof(unsigned short));
             memcpy(&chip->op_op1_1[1][0], &chip->op_op1_1[0][0], 6 * sizeof(unsigned short));
             memcpy(&chip->op_op2[1][0], &chip->op_op2[0][0], 6 * sizeof(unsigned short));
-            
+
             int mod = (chip->op_mod1 + chip->op_mod2) >> 1;
             mod &= 0x3fff;
             chip->op_mod_sum = mod;
             memcpy(&chip->op_mod[1][0], &chip->op_mod[0][0], 6 * sizeof(unsigned short));
         }
     }
+
+    {
+        if (!chip->mclk2)
+        {
+            int addr2d = chip->write2_en && ADDRESS_MATCH(0x2d);
+            int addr2e = chip->write2_en && ADDRESS_MATCH(0x2e);
+            int addr2f = chip->write2_en && ADDRESS_MATCH(0x2f);
+            chip->ssg_prescaler1[0] = (chip->ssg_prescaler1[1] && !addr2f) || addr2e;
+            chip->ssg_prescaler2[0] = (chip->ssg_prescaler2[1] && !addr2f) || addr2d || chip->ic;
+
+            chip->ssg_div1[0] = !chip->ssg_div1[1];
+        }
+        else
+        {
+            chip->ssg_prescaler1[1] = chip->ssg_prescaler1[0] && !chip->ic;
+            chip->ssg_prescaler2[1] = chip->ssg_prescaler2[0];
+
+            chip->ssg_div1[1] = chip->ssg_div1[0];
+        }
+        if (!chip->ssg_div1[0])
+        {
+            chip->ssg_div2[0] = !chip->ssg_div2[1]
+        }
+        else
+        {
+            chip->ssg_div2[1] = chip->ssg_div2[0]
+        }
+        if (!chip->ssg_div2[0])
+        {
+            chip->ssg_div3[0] = !chip->ssg_div3[1]
+        }
+        else
+        {
+            chip->ssg_div3[1] = chip->ssg_div3[0]
+        }
+        if (chip->ic_check2)
+        {
+            chip->ssg_div1[0] = 0;
+            chip->ssg_div1[1] = 0;
+            chip->ssg_div2[0] = 0;
+            chip->ssg_div2[1] = 0;
+            chip->ssg_div3[0] = 0;
+            chip->ssg_div3[1] = 0;
+        }
+
+        if (chip->ssg_prescaler2[1])
+        {
+            if (chip->ssg_prescaler1[1])
+            {
+                chip->ssg_clk = chip->ssg_div2[0];
+            }
+            else
+            {
+                chip->ssg_clk = chip->ssg_div3[0];
+            }
+        }
+        else
+            chip->ssg_clk = chip->ssg_div1[0];
+
+        chip->ssg_clk1 = !chip->ssg_clk;
+        chip->ssg_clk2 = chip->ssg_clk;
+    }
+#undef ADDRESS_MATCH
 }
