@@ -10,6 +10,7 @@ typedef struct {
     int a1;
     int data;
     int gpio_a;
+    int test;
 } fmopna_input_t;
 
 typedef struct {
@@ -239,6 +240,8 @@ typedef struct {
     int pg_phase[2][23];
     int pg_phase2[2];
     int pg_out;
+    int pg_dbgsync;
+    int pg_dbg[2];
     int dt_add1;
     int dt_add2;
     int dt_enable[2];
@@ -246,6 +249,62 @@ typedef struct {
     int dt_blockmax[2];
     int dt_note[2];
     int dt_sign[2];
+
+    int eg_sync;
+    int eg_prescaler[2];
+    int eg_prescaler_clock_l[2];
+    int eg_clock_delay[2];
+    int eg_ic[2];
+
+    int eg_step[3];
+    int eg_timer_step[2];
+
+    int eg_timer[2];
+    int eg_timer_sum[2];
+    int eg_timer_carry[2];
+    int eg_timer_mask[2];
+    int eg_timer_masked[2];
+    int eg_timer_test;
+    int eg_timer_test_bit[2];
+    int eg_timer_low_lock;
+    int eg_shift_lock;
+
+    int eg_rate_sel;
+    int eg_rate_ar;
+    int eg_rate_dr;
+    int eg_rate_sr;
+    int eg_rate_rr;
+    int eg_rate;
+    int eg_rate_nonzero[3];
+    unsigned char eg_state[2][23];
+    int eg_ks;
+    int eg_ksv;
+    int eg_rate2;
+    int eg_ratenz;
+    int eg_rate12;
+    int eg_rate13;
+    int eg_rate14;
+    int eg_rate15;
+    int eg_rate_low;
+    int eg_rate_slow;
+    int eg_maxrate[2];
+    int eg_incsh0[2];
+    int eg_incsh1[2];
+    int eg_incsh2[2];
+    int eg_incsh3[2];
+    int eg_output;
+    unsigned short eg_level[2][22];
+    int eg_ssg_inv;
+    int eg_ssg_sign[2];
+    int eg_ssg_holdup[2];
+    int eg_ssg_pgreset[2];
+    int eg_ssg_dir[2];
+    int eg_ssg_egrepeat[2];
+    int eg_key[2];
+    int eg_kon_latch[2];
+    int eg_kon_event;
+    int eg_pg_reset[2];
+
 
     int tm_w1;
     int tm_w2;
