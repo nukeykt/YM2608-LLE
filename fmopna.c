@@ -250,17 +250,6 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             chip->write3_trig0 = 1;
         else if (chip->write3_l[0])
             chip->write3_trig0 = 0;
-        if (chip->tm_w1)
-        {
-            chip->write3_trig1 = chip->write3_trig0;
-            chip->write3_l[1] = chip->write3_l[0];
-        }
-        if (chip->tm_w2)
-        {
-            chip->write3_l[0] = chip->write3_trig1;
-            chip->write3_l[2] = chip->write3_l[1];
-        }
-        chip->write3_en = chip->write3_l[0] && !chip->write3_l[2];
 
         if (write)
             chip->data_l = (chip->input.data & 255) | (chip->input.a1 << 8);
@@ -331,7 +320,8 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
 
             chip->write_fm_data[0] = (chip->write_fm_address[1] && chip->write1_en) || (chip->write_fm_data[1] && !chip->write0_en);
 
-            chip->addr_10[0] = chip->write0_en ? ADDRESS_MATCH(0x110) : chip->addr_10[1];
+            chip->addr_10[0] = chip->write0_en ? ADDRESS_MATCH(0x10) : chip->addr_10[1];
+            chip->addr_10h[0] = chip->write0_en ? ADDRESS_MATCH(0x110) : chip->addr_10h[1];
             chip->addr_12[0] = chip->write0_en ? ADDRESS_MATCH(0x12) : chip->addr_12[1];
             chip->addr_21[0] = chip->write0_en ? ADDRESS_MATCH(0x21) : chip->addr_21[1];
             chip->addr_22[0] = chip->write0_en ? ADDRESS_MATCH(0x22) : chip->addr_22[1];
@@ -344,7 +334,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             chip->addr_ff[0] = chip->write0_en ? ADDRESS_MATCH(0xff) : chip->addr_ff[1];
 
 
-            int write10 = chip->addr_10[1] && (chip->data_bus1 & 0x100) != 0 && chip->write1_en;
+            int write10 = chip->addr_10h[1] && (chip->data_bus1 & 0x100) != 0 && chip->write1_en;
             int irq_rst = write10 && (chip->data_bus2 & 0x80) == 0;
 
             if (chip->ic)
@@ -377,7 +367,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
                 }
                 else
                 {
-                    chip->reg_mask[0] = chip->reg_mask[0];
+                    chip->reg_mask[0] = chip->reg_mask[1];
                 }
                 if (chip->addr_12[1] && (chip->data_bus1 & 0x100) == 0 && chip->write1_en)
                 {
@@ -658,6 +648,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             chip->write_fm_data[1] = chip->write_fm_data[0];
 
             chip->addr_10[1] = chip->addr_10[0];
+            chip->addr_10h[1] = chip->addr_10h[0];
             chip->addr_12[1] = chip->addr_12[0];
             chip->addr_21[1] = chip->addr_21[0];
             chip->addr_22[1] = chip->addr_22[0];
@@ -801,7 +792,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
         }
 
         {
-            int write10 = chip->addr_10[1] && (chip->data_bus1 & 0x100) != 0 && chip->write1_en;
+            int write10 = chip->addr_10h[1] && (chip->data_bus1 & 0x100) != 0 && chip->write1_en;
             int irq_rst = write10 && (chip->data_bus2 & 0x80) == 0;
             chip->irq_mask_eos = (chip->reg_mask[1] & 4) != 0 || chip->irq_eos_l || irq_rst;
             chip->irq_mask_brdy = (chip->reg_mask[1] & 8) != 0 || irq_rst;
@@ -2000,7 +1991,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             chip->ssg_freq_cnt2[5] = chip->ssg_freq_cnt2[4];
             chip->ssg_freq_cnt2[7] = chip->ssg_freq_cnt2[6];
 
-            int cnt_of = !chip->ssg_cnt_reload && ((chip->ssg_sel_freq_l + chip->ssg_freq_cnt[0] + chip->ssg_cnt_of_l) & 0x10) != 0;
+            int cnt_of = !chip->ssg_cnt_reload && (chip->ssg_sel_freq_l - chip->ssg_cnt_of_l < chip->ssg_freq_cnt2[0]);
 
             chip->ssg_cnt2_add = (chip->ssg_sel[1] & 8) != 0 && of;
 
@@ -2010,21 +2001,21 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
 
             int fr_rst = chip->ssg_ch_of || ((cnt_of || chip->ssg_cnt_reload) && chip->ssg_sel_eg_l[1]);
 
-            chip->ssg_freq_cnt[2] = fr_rst ? 0 : chip->ssg_freq_cnt[1];
+chip->ssg_freq_cnt[2] = fr_rst ? 0 : chip->ssg_freq_cnt[1];
 
-            chip->ssg_fr_rst_l = fr_rst;
+chip->ssg_fr_rst_l = fr_rst;
 
-            chip->ssg_noise_add = (chip->ssg_sel[1] & 1) != 0;
+chip->ssg_noise_add = (chip->ssg_sel[1] & 1) != 0;
 
-            chip->ssg_noise_cnt[1] = chip->ssg_noise_cnt[0];
+chip->ssg_noise_cnt[1] = chip->ssg_noise_cnt[0];
 
-            int noise_of = (((chip->ssg_noise_cnt[0] >> 1) + chip->ssg_noise) & 32) != 0;
+int noise_of = chip->ssg_noise <= (chip->ssg_noise_cnt[0] >> 1);
 
-            chip->ssg_noise_of = noise_of && chip->ssg_noise_of_low;
+chip->ssg_noise_of = noise_of && chip->ssg_noise_of_low;
 
-            chip->ssg_test = chip->input.test;
+chip->ssg_test = chip->input.test;
 
-            chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
+chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
         }
         if (chip->ssg_clk2)
         {
@@ -2049,7 +2040,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             chip->ssg_freq_cnt[5] = chip->ssg_freq_cnt[4];
             chip->ssg_freq_cnt[7] = chip->ssg_freq_cnt[6];
 
-            int cnt_of = (((chip->ssg_sel_freq & 0xfff) + chip->ssg_freq_cnt[0] + 1) & 0x1000) != 0;
+            int cnt_of = (chip->ssg_sel_freq & 0xfff) <= chip->ssg_freq_cnt[0];
 
             chip->ssg_cnt_of_l = cnt_of;
             chip->ssg_sel_freq_l = (chip->ssg_sel_freq >> 12) & 0xf;
@@ -2108,5 +2099,201 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
         int sign_c = ((chip->ssg_mode & 4) == 0 && (chip->ssg_sign[0] & 4) != 0) || ((chip->ssg_mode & 32) == 0 && chip->ssg_noise_bit);
 
     }
+
+    {
+        if (chip->mclk2)
+        {
+            chip->rss_dclk_l = chip->dclk;
+        }
+        if (chip->clk2)
+        {
+            chip->rss_cnt1_sync = !chip->fsm_rss2;
+        }
+        if (chip->aclk1)
+        {
+            int cnt1_rst = chip->rss_cnt1[1] == 5 || chip->rss_cnt1_sync;
+            chip->rss_cnt1[0] = cnt1_rst ? 0 : (chip->rss_cnt[1] + 1) & 7;
+
+            chip->rss_eclk1_l = chip->rss_cnt1[1] == 2 || chip->rss_cnt1[1] == 3;
+            chip->rss_eclk2_l = chip->rss_cnt1[1] == 5 || chip->rss_cnt1[1] == 0;
+            chip->rss_fclk_sel[0] = chip->rss_cnt1[1] == 5 || chip->rss_cnt1[1] == 0 || chip->rss_cnt1[1] == 1;
+        }
+
+        if (chip->aclk2)
+        {
+            chip->rss_cnt1[1] = chip->rss_cnt1[0];
+
+            chip->rss_eclk1 = chip->rss_eclk1_l;
+            chip->rss_eclk2 = chip->rss_eclk2_l;
+
+            chip->rss_fclk_sel[1] = chip->rss_fclk_sel[0];
+        }
+
+        chip->rss_fclk1 = !chip->rss_dclk_l && chip->aclk1 && chip->rss_fclk_sel[1];
+        chip->rss_fclk2 = !chip->rss_dclk_l && chip->aclk2 && chip->rss_fclk_sel[1];
+
+        if (chip->clk1)
+        {
+            int clk_rst = chip->rss_fmcnt_of || chip->rss_fmcnt_sync;
+            chip->rss_fmcnt[0] = clk_rst ? 0 : (rss_fmcnt[1] + 1) & 15;
+
+            chip->rss_tl_sel[0] = chip->write0_en ? chip->data_bus1 == 0x11 : chip->rss_tl_sel[1];
+
+            if (chip->ic)
+                chip->rss_tl[0] = 0;
+            else
+                chip->rss_tl[0] = chip->rss_tl_sel[1] && (chip->data_bus1 & 0x100) == 0 && chip->write1_en ? chip->data_bus1 & 0x3f : chip->rss_tl[1];
+        }
+        if (chip->clk2)
+        {
+            chip->rss_fmcnt[1] = chip->rss_fmcnt[0];
+            chip->rss_fmcnt_of = (chip->rss_fmcnt[0] & 11) == 11;
+
+            chip->rss_fmcnt_sync = chip->fsm_sel23[1];
+
+            chip->rss_tl_sel[1] = chip->rss_tl_sel[0];
+
+            chip->rss_tl[1] = chip->rss_tl[0];
+        }
+
+        if (chip->rss_eclk1)
+        {
+            int cnt2_rst = chip->ic || chip->rss_cnt2[1] == 5 || (chip->fsm_rss && chip->rss_cnt2[0] == 0);
+            chip->rss_cnt2[0] = cnt2_rst ? 0 : (chip->rss_cnt2[1] + 1) & 7;
+        }
+        if (chip->rss_eclk2)
+        {
+            chip->rss_cnt2[1] = chip->rss_cnt2[0];
+        }
+
+        int rss_fm_match = chip->rss_fmcnt[1] == chip->rss_cnt2[1];
+
+        if (chip->clk1 && rss_fm_match)
+        {
+            chip->rss_params[0] = chip->reg_rss[1][5];
+        }
+        if (chip->rss_cnt1[1] == 3)
+        {
+            chip->rss_params[1] = chip->rss_params[0];
+        }
+
+
+        if (chip->rss_eclk1)
+        {
+            chip->write3_trig1 = chip->write3_trig0;
+            chip->write3_l[1] = chip->write3_l[0];
+        }
+        if (chip->rss_eclk2)
+        {
+            chip->write3_l[0] = chip->write3_trig1;
+            chip->write3_l[2] = chip->write3_l[1];
+        }
+        chip->write3_en = chip->write3_l[0] && !chip->write3_l[2];
+
+        if (chip->rss_eclk1)
+        {
+            if (!chip->ic)
+            {
+                chip->rss_keydm[0] = 0;
+                chip->rss_keymask[0] = 0;
+            }
+            else
+            {
+                int key_write = chip->write3_en && chip->addr_10[1] && (chip->data_bus1 & 0x100) == 0;
+                if (key_write)
+                {
+                    chip->rss_keydm[0] = (chip->data_bus1 & 0x80) != 0;
+                    chip->rss_keymask[0] = chip->data_bus1 & 0x3f;
+                }
+                else
+                {
+                    chip->rss_keydm[0] = chip->rss_keydm[1];
+                    chip->rss_keymask[0] = chip->rss_keymask[1];
+                }
+            }
+
+            int mask = chip->rss_keymask[1] & (1 << chip->rss_cnt2[1]);
+
+            int key_event = mask != 0;
+
+            chip->rss_keymask[0] &= ~mask;
+
+            int kon_event = key_event && !chip->rss_keydm[1];
+            int koff_event = key_event && chip->rss_keydm[1];
+
+            chip->rss_ic[0] = (rss_ic[1] << 1) | chip->ic;
+
+            int ic = chip->ic || (chip->rss_ic[1] & 0x3f) != 0;
+
+            int key = (chip->rss_key[1] & 0x20) != 0;
+
+            int key_next = !ic && !koff_event && (key || kon_event);
+
+            chip->rss_key[0] = (chip->rss_key[1] << 1) | key_next;
+
+            int stop = (chip->rss_stop[1] & 0x20) != 0;
+
+            int eos = chip->rss_eos_l && !(chip->reg_test_12[1] & 16);
+
+            int stop_next = !kon_event && (stop || ic || koff_event || eos);
+
+            chip->rss_stop[0] = (chip->rss_stop[1] << 1) | stop_next;
+
+            int c0 = !kon_event
+
+        }
+        if (chip->rss_eclk2)
+        {
+            chip->rss_keydm[1] = chip->rss_keydm[0];
+            chip->rss_keymask[1] = chip->rss_keymask[0];
+
+            chip->rss_ic[1] = chip->rss_ic[0];
+
+            chip->rss_key[1] = chip->rss_key[0];
+
+            chip->rss_stop[1] = chip->rss_stop[0];
+        }
+
+        if (chip->rss_cnt1[1] == 0)
+        {
+            chip->rss_eos_l = chip->tm_w1;
+            chip->rss_step = chip->tm_w1;
+        }
+
+        static const int rss_delta[64] = {
+            16, 17, 19, 21, 23, 25, 28, 31, 34, 37, 41, 45, 50, 55, 60, 66,
+            73, 80, 88, 97, 107, 118, 130, 143, 157, 173, 190, 209, 230, 253, 279, 307,
+            337, 371, 408, 449, 494, 544, 598, 658, 724, 796, 876, 963, 1060, 1166, 1282, 1411,
+            1552, 1552, 1552, 1552, 1552, 1552, 1552, 1552, 1552, 1552, 1552, 1552, 1552, 1552, 1552, 1552
+        };
+
+        {
+
+            int mask = chip->rss_keymask[1] & (1 << chip->rss_cnt2[1]);
+
+            int key_event = mask != 0;
+
+            int kon_event = key_event && !chip->rss_keydm[1];
+            int koff_event = key_event && chip->rss_keydm[1];
+
+            int eos = chip->rss_eos_l && !(chip->reg_test_12[1] & 16);
+
+            int stop = (chip->rss_stop[1] & 0x20) != 0;
+
+            int c0 = !kon_event && !eos && chip->rss_step && !chip->tm_w1 && chip->rss_cnt1[1] == 5;
+            int c1 = !kon_event && !eos && chip->rss_step && chip->tm_w1 && chip->rss_cnt1[1] == 5;
+            int c2 = !kon_event && chip->rss_step && chip->rss_cnt1[1] == 1;
+            int c3 = kon_event && chip->rss_cnt1[0] == 0;
+            int c4 = !kon_event && !eos && !stop && chip->rss_cnt1[1] == 0;
+            int c5 = chip->rss_cnt1[1] == 2;
+            int c6 = chip->rss_cnt1[1] == 3 || chip->rss_cnt[1] == 4;
+            int c7 = (chip->rss_cnt1[1] == 2 && !chip->tm_w1) || (chip->rss_cnt1[1] == 3 && !chip->tm_w1)
+                || (chip->rss_cnt1[1] == 4 && !chip->tm_w1);
+            int c8 = (!kon_event && chip->rss_cnt1[1] == 0) || (!kon_event && chip->rss_cnt1[1] == 1)
+                || (chip->rss_cnt1[1] == 5 && !eos && !kon_event && !(chip->reg_test_12[1] & 16));
+
+        }
+    }
+
 #undef ADDRESS_MATCH
 }

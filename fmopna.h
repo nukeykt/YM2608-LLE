@@ -82,6 +82,7 @@ typedef struct {
     int o_gpio_b_d;
 
     int addr_10[2];
+    int addr_10h[2];
     int addr_12[2];
     int addr_21[2];
     int addr_22[2];
@@ -417,6 +418,32 @@ typedef struct {
     int ssg_noise_lfsr[2];
     int ssg_noise_bit;
 
+
+    int rss_cnt1[2];
+    int rss_cnt1_sync;
+
+    int rss_eclk1_l;
+    int rss_eclk2_l;
+    int rss_eclk1;
+    int rss_eclk2;
+    int rss_dclk_l;
+    int rss_fclk_sel[2];
+    int rss_fclk1;
+    int rss_fclk2;
+    int rss_cnt2[2];
+    int rss_fmcnt[2];
+    int rss_fmcnt_of;
+    int rss_fmcnt_sync;
+    int rss_params[2];
+    int rss_tl_sel[2];
+    int rss_tl[2];
+    int rss_keydm[2];
+    int rss_keymask[2];
+    int rss_ic[2];
+    int rss_key[2];
+    int rss_stop[2];
+    int rss_eos_l;
+    int rss_step;
 
     int tm_w1;
     int tm_w2;
