@@ -445,6 +445,16 @@ typedef struct {
     int rss_eos_l;
     int rss_step;
 
+    int rss_accum[2];
+    int rss_regs[2][17];
+
+    int rss_delta_ix_load;
+    int rss_delta_ix;
+    int rss_ix_load;
+    int rss_ix;
+    int rss_isend;
+    int rss_cnt1_is1;
+
     int tm_w1;
     int tm_w2;
     int tm_w3;

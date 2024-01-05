@@ -2256,8 +2256,8 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
 
         if (chip->rss_cnt1[1] == 0)
         {
-            chip->rss_eos_l = chip->tm_w1;
-            chip->rss_step = chip->tm_w1;
+            chip->rss_eos_l = chip->rss_isend;
+            chip->rss_step = (chip->rss_ix & 1) == 0;
         }
 
         static const int rss_delta[64] = {
@@ -2267,30 +2267,143 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
             1552, 1552, 1552, 1552, 1552, 1552, 1552, 1552, 1552, 1552, 1552, 1552, 1552, 1552, 1552, 1552
         };
 
+        static const int rss_adjust[8] = {
+            31, 31, 31, 31, 2, 5, 7, 9
+        };
+
+        static const int rss_start[8] = {
+            0, 0x1c0, 0x440, 0x1b80, 0x1d00, 0x1f80, 0, 0
+        };
+
         {
 
-            int mask = chip->rss_keymask[1] & (1 << chip->rss_cnt2[1]);
+            if (chip->aclk1)
+            {
 
-            int key_event = mask != 0;
+                int mask = chip->rss_keymask[1] & (1 << chip->rss_cnt2[1]);
 
-            int kon_event = key_event && !chip->rss_keydm[1];
-            int koff_event = key_event && chip->rss_keydm[1];
+                int key_event = mask != 0;
 
-            int eos = chip->rss_eos_l && !(chip->reg_test_12[1] & 16);
+                int kon_event = key_event && !chip->rss_keydm[1];
+                int koff_event = key_event && chip->rss_keydm[1];
 
-            int stop = (chip->rss_stop[1] & 0x20) != 0;
+                int eos = chip->rss_eos_l && !(chip->reg_test_12[1] & 16);
 
-            int c0 = !kon_event && !eos && chip->rss_step && !chip->tm_w1 && chip->rss_cnt1[1] == 5;
-            int c1 = !kon_event && !eos && chip->rss_step && chip->tm_w1 && chip->rss_cnt1[1] == 5;
-            int c2 = !kon_event && chip->rss_step && chip->rss_cnt1[1] == 1;
-            int c3 = kon_event && chip->rss_cnt1[0] == 0;
-            int c4 = !kon_event && !eos && !stop && chip->rss_cnt1[1] == 0;
-            int c5 = chip->rss_cnt1[1] == 2;
-            int c6 = chip->rss_cnt1[1] == 3 || chip->rss_cnt[1] == 4;
-            int c7 = (chip->rss_cnt1[1] == 2 && !chip->tm_w1) || (chip->rss_cnt1[1] == 3 && !chip->tm_w1)
-                || (chip->rss_cnt1[1] == 4 && !chip->tm_w1);
-            int c8 = (!kon_event && chip->rss_cnt1[1] == 0) || (!kon_event && chip->rss_cnt1[1] == 1)
-                || (chip->rss_cnt1[1] == 5 && !eos && !kon_event && !(chip->reg_test_12[1] & 16));
+                int stop = (chip->rss_stop[1] & 0x20) != 0;
+
+                int nibble = chip->tm_w1;
+
+                int adjust = rss_adjust[chip->tm_w1 & 7];
+
+                if (chip->reg_test_12[1] & 16)
+                {
+                    nibble = 4;
+                    adjust = 1;
+                }
+
+                int c5 = chip->rss_cnt1[1] == 2;
+                int c6 = chip->rss_cnt1[1] == 3 || chip->rss_cnt[1] == 4;
+                int c8 = (!kon_event && chip->rss_cnt1[1] == 0) || (!kon_event && chip->rss_cnt1[1] == 1)
+                    || (chip->rss_cnt1[1] == 5 && !eos && !kon_event && !(chip->reg_test_12[1] & 16));
+
+                int c0 = !kon_event && !eos && chip->rss_step && (nibble & 8) != 0 && chip->rss_cnt1[1] == 5;
+                int c1 = !kon_event && !eos && chip->rss_step && (nibble & 8) == 0 && chip->rss_cnt1[1] == 5;
+                int c2 = !kon_event && chip->rss_step && chip->rss_cnt1[1] == 1;
+                int c3 = kon_event && chip->rss_cnt1[0] == 0;
+                int c4 = !kon_event && !eos && !stop && chip->rss_cnt1[1] == 0;
+                int c7 = (chip->rss_cnt1[1] == 2 && (nibble & 1) != 0) || (chip->rss_cnt1[1] == 3 && (nibble & 2) != 0)
+                    || (chip->rss_cnt1[1] == 4 && (nibble & 4) != 0);
+
+                int delta = rss_delta[chip->rss_delta_ix];
+
+                // c5 c6 c8
+                // c0 c1 c2 c3 c4 c7
+
+                int carry = c4 || c0;
+                int add1 = 0;
+                int add2 = 0;
+                if (c7)
+                {
+                    add1 |= delta;
+                }
+                if (c1)
+                {
+                    add1 |= chip->rss_accum[1] & 0xfff;
+                }
+                if (c0)
+                {
+                    add1 |= (chip->rss_accum[1] & 0xfff) ^ 0xfff;
+                }
+                if (c2)
+                {
+                    add1 |= adjust;
+                }
+                if (c3)
+                {
+                    add1 |= rss_start[chip->rss_cnt2[1]] << 2;
+                }
+                if (c4)
+                {
+                    if (chip->rss_cnt2[1] == 0 || chip->rss_cnt2[1] == 1 || chip->rss_cnt2[1] == 2 || chip->rss_cnt2[1] == 3)
+                        add1 |= 1;
+                }
+
+                if (c8)
+                {
+                    add2 |= chip->rss_regs[1][16];
+                }
+                if (c6)
+                {
+                    add2 |= (chip->rss_accum[1] >> 1) & 0x7ff;
+                }
+                if (c5)
+                {
+                    add2 |= delta >> 1;
+                }
+
+                chip->rss_accum[0] = (add1 + add2 + carry) & 0x7fff;
+
+                chip->rss_delta_ix_load = chip->rss_cnt1[1] == 5;
+                chip->rss_ix_load = chip->rss_cnt1[1] == 1;
+
+                chip->rss_cnt1_is1 = chip->rss_cnt1[1] == 1;
+            }
+            if (chip->aclk2)
+            {
+                chip->rss_accum[1] = chip->rss_accum[0];
+                if (chip->rss_cnt1_is1)
+                {
+                    if ((chip->rss_accum[0] & 0x3f) == 0x3f)
+                        chip->rss_accum[1] &= ~0x3f;
+                    if ((chip->rss_accum[0] & 0x38) == 0x30 || (chip->rss_accum[0] & 0x3c) == 0x38)
+                        chip->rss_accum[1] &= ~0xf;
+                }
+            }
+
+            if (chip->rss_cnt1[1] != 5 && chip->rss_delta_ix_load)
+            {
+                chip->rss_delta_ix = chip->rss_regs[1][14] & 63;
+            }
+
+            if (chip->rss_cnt1[1] != 1 && chip->rss_ix_load)
+            {
+                chip->rss_ix = chip->rss_regs[1][14] & 0x7fff;
+
+                int ix = chip->rss_ix >> 2;
+
+                chip->rss_isend = ix == 0x1bf || ix == 0x43f ||
+                    ix == 0x1b7f || ix == 0x1cff ||
+                    ix == 0x1f7f || ix == 0x1fff;
+            }
+
+            if (chip->rss_fclk1)
+            {
+                memcpy(&rss_regs[0][1], &rss_regs[1][0], 16 * sizeof(int));
+            }
+            if (chip->rss_fclk2)
+            {
+                memcpy(&rss_regs[1][0], &rss_regs[0][0], 17 * sizeof(int));
+            }
 
         }
     }
