@@ -2175,6 +2175,74 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
         if (chip->rss_cnt1[1] == 3)
         {
             chip->rss_params[1] = chip->rss_params[0];
+            chip->rss_tl_l = chip->rss_tl[1];
+
+            chip->rss_tl_shift[1] = chip->rss_tl_shift[0];
+        }
+        int tl = (chip->rss_params[1] & 0x1f) + chip->rss_tl_l;
+        int key = (chip->rss_key[1] & 0x20) != 0;
+        if ((tl & 64) != 0 || !key)
+            tl = 63;
+        if (chip->rss_cnt1[1] == 5)
+        {
+            chip->rss_tl_shift[0] = (tl >> 3);
+            chip->rss_tl_shift[2] = chip->rss_tl_shift[1];
+        }
+
+        int dbg_load = ((chip->reg_test_12[1] & 16) != 0 && chip->rss_cnt1[1] == 5)
+            || ((chip->reg_test_12[1] & 8) != 0 && chip->rss_cnt1[1] == 1);
+
+        if (chip->aclk1)
+        {
+            int load = chip->rss_cnt1[1] == 5 && tl != 63;
+            chip->rss_multi_ctrl[0] = chip->rss_multi_ctrl[1] >> 1;
+            if (load)
+            {
+                chip->rss_multi_ctrl[0] |= (15 - (tl & 7)) << 2;
+            }
+
+            chip->rss_sample_load = chip->rss_cnt1[1] == 5;
+            chip->rss_sample_shift_load = chip->rss_cnt1[1] == 0;
+
+            int add1 = 0;
+            if (chip->rss_multi_ctrl[1] & 1)
+            {
+                add1 = chip->rss_sample;
+                if (add1 & 0x800)
+                    add1 |= 0x1000;
+            }
+            int add2 = 0;
+            if (chip->rss_cnt1[1] != 5)
+            {
+                add2 = chip->rss_multi_accum[1] >> 1;
+                if (add2 & 0x800)
+                    add2 |= 0x1000;
+            }
+            chip->rss_multi_accum[0] = (add1 + add2) & 0x1fff;
+
+            chip->rss_dbg_load = dbg_load;
+        }
+        if (chip->aclk2)
+        {
+            chip->rss_multi_ctrl[1] = chip->rss_multi_ctrl[0];
+        }
+
+        if (chip->rss_cnt1[1] == 5 && !chip->rss_sample_load)
+        {
+            chip->rss_sample = chip->rss_regs[1][16];
+        }
+
+        if (chip->rss_cnt1[1] == 0 && !chip->rss_sample_shift_load)
+        {
+            int sample = chip->rss_multi_accum[1];
+            if (sample & 0x1000)
+                sample |= ~0x1fff;
+            chip->rss_sample_shift = sample >> chip->rss_tl_shift[2];
+        }
+
+        if (dbg_load && !chip->rss_dbg_load)
+        {
+            chip->rss_dbg_data = chip->rss_regs[1][16] | (chip->rss_isend << 15);
         }
 
 
@@ -2239,8 +2307,6 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
 
             chip->rss_stop[0] = (chip->rss_stop[1] << 1) | stop_next;
 
-            int c0 = !kon_event
-
         }
         if (chip->rss_eclk2)
         {
@@ -2291,9 +2357,9 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
 
                 int stop = (chip->rss_stop[1] & 0x20) != 0;
 
-                int nibble = chip->tm_w1;
+                int nibble = chip->rss_nibble;
 
-                int adjust = rss_adjust[chip->tm_w1 & 7];
+                int adjust = rss_adjust[chip->rss_nibble & 7];
 
                 if (chip->reg_test_12[1] & 16)
                 {
@@ -2394,6 +2460,15 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
                 chip->rss_isend = ix == 0x1bf || ix == 0x43f ||
                     ix == 0x1b7f || ix == 0x1cff ||
                     ix == 0x1f7f || ix == 0x1fff;
+            }
+
+            if (chip->rss_cnt1[1] == 0)
+            {
+                chip->rss_nibble = rss_rom[(chip->rss_ix >> 2) & 0x1fff];
+                if (chip->rss_ix & 1)
+                    chip->rss_nibble >>= 4;
+                else
+                    chip->rss_nibble &= 15;
             }
 
             if (chip->rss_fclk1)

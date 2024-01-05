@@ -454,6 +454,19 @@ typedef struct {
     int rss_ix;
     int rss_isend;
     int rss_cnt1_is1;
+    int rss_nibble;
+    int rss_tl_l;
+    int rss_tl_shift[3];
+
+    int rss_sample_load;
+    int rss_sample;
+    int rss_multi_ctrl[2];
+    int rss_multi_accum[2];
+    int rss_sample_multi;
+    int rss_sample_shift_load;
+    int rss_sample_shift;
+    int rss_dbg_load;
+    int rss_dbg_data;
 
     int tm_w1;
     int tm_w2;
