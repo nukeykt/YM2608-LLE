@@ -468,6 +468,9 @@ typedef struct {
     int rss_dbg_load;
     int rss_dbg_data;
 
+    int ad_code_ptr[2];
+    int ad_code_ctrl;
+
     int tm_w1;
     int tm_w2;
     int tm_w3;

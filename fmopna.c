@@ -2483,5 +2483,390 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
         }
     }
 
+    {
+
+        if (chip->cclk1)
+        {
+            int next_ptr = 0;
+            chip->ad_code_ctrl = 0;
+
+            switch (chip->ad_code_ptr[1])
+            {
+                case 0x3f:
+                case 0x3f|0x40:
+                    if (chip->tm_w1)
+                    {
+                        chip->ad_code_ctrl = 0b000100000011110011001;
+                        next_ptr = 0x32;
+                    }
+                    else
+                        next_ptr = 0x3f;
+                    break;
+                case 0x32:
+                case 0x32|0x40:
+                    chip->ad_code_ctrl = 0b000100000001110111001;
+                    break;
+                case 0x33:
+                case 0x33|0x40:
+                    chip->ad_code_ctrl = 0b000100000000110111101;
+                    break;
+                case 0x34:
+                case 0x34|0x40:
+                    chip->ad_code_ctrl = 0b000100000000110011011
+                    break;
+                case 0x35:
+                case 0x35|0x40:
+                    chip->ad_code_ctrl = 0b000100000000110111011;
+                    break;
+                case 0x36:
+                case 0x36|0x40:
+                    chip->ad_code_ctrl = 0b000100000000010011100;
+                    break;
+                case 0x3b:
+                    if (chip->tm_w1)
+                        next_ptr = 0x31;
+                    break;
+                case 0x37|0x40:
+                    chip->ad_code_ctrl = 0b000100000000110011111;
+                    break;
+                case 0x38|0x40:
+                    chip->ad_code_ctrl = 0b000100000000110111111;
+                    break;
+                case 0x39|0x40:
+                    chip->ad_code_ctrl = 0b000000000000110011001;
+                    break;
+                case 0x3a|0x40:
+                    if (chip->tm_w1)
+                    {
+                        next_ptr = 0x3a;
+                        chip->ad_code_ctrl = 0b000000000000110011001;
+                    }
+                    break;
+                case 0x3b|0x40:
+                    if (chip->tm_w1)
+                    {
+                        chip->ad_code_ctrl = 0b000000100010110010000;
+                        next_ptr = 0x7;
+                    }
+                    else
+                        next_ptr = 0x3b;
+                    break;
+                    
+                case 0x01:
+                    chip->ad_code_ctrl = 0b000011000010000000000;
+                    break;
+                case 0x02:
+                    chip->ad_code_ctrl = 0b000010001000110010000;
+                    break;
+                case 0x03:
+                    chip->ad_code_ctrl = 0b001110000000000000010;
+                    break;
+                case 0x04:
+                    chip->ad_code_ctrl = 0b000110000000000100010;
+                    break;
+                case 0x05:
+                    if (chip->tm_w1)
+                        chip->ad_code_ctrl = 0b100011000000010000010;
+                    else
+                    {
+                        chip->ad_code_ctrl = 0b100010100000000000010;
+                        next_ptr = 0x12;
+                    }
+                    break;
+                case 0x06:
+                    chip->ad_code_ctrl = 0b100010000000000100010;
+                    break;
+                case 0x07:
+                    chip->ad_code_ctrl = 0b001110000000000000010;
+                    break;
+                case 0x08:
+                    chip->ad_code_ctrl = 0b000110000000000100010;
+                    break;
+                case 0x09:
+                    chip->ad_code_ctrl = 0b100010100000000000010;
+                    break;
+                case 0x0a:
+                    chip->ad_code_ctrl = 0b100010000000000100010;
+                    break;
+                case 0x0b:
+                    chip->ad_code_ctrl = 0b100011000000000000100;
+                    break;
+                case 0x0c:
+                    chip->ad_code_ctrl = 0b100010001000000100100;
+                    break;
+                case 0x0e:
+                    chip->ad_code_ctrl = 0b000000000000010000000;
+                    break;
+                case 0x0f:
+                    if (chip->tm_w1)
+                    {
+                        next_ptr = 0x13;
+                        chip->ad_code_ctrl = 0b100000100000000000000;
+                    }
+                    break;
+                case 0x10:
+                    chip->ad_code_ctrl = 0b011100100000000000000;
+                    break;
+                case 0x11:
+                    chip->ad_code_ctrl = 0b000100000000010110000;
+                    break;
+                case 0x12:
+                    next_ptr = 0x15;
+                    break;
+                case 0x13:
+                    chip->ad_code_ctrl = 0b100000000000010110000;
+                    break;
+                case 0x15:
+                    chip->ad_code_ctrl = 0b011001000000000000000;
+                    break;
+                case 0x17:
+                    chip->ad_code_ctrl = 0b100010100000100010010;
+                    break;
+                case 0x18:
+                    chip->ad_code_ctrl = 0b100010001000100110010;
+                    break;
+                case 0x1a:
+                    chip->ad_code_ctrl = 0b000000000000010000000;
+                    break;
+                case 0x1b:
+                    if (chip->tm_w1)
+                    {
+                        next_ptr = 0x20;
+                        chip->ad_code_ctrl = 0b100000100000000000000;
+                    }
+                    else
+                        chip->ad_code_ctrl = 0b000000000000100010000;
+                    break;
+                case 0x1c:
+                    chip->ad_code_ctrl = 0b000000000000100010000;
+                    break;
+                case 0x1d:
+                    chip->ad_code_ctrl = 0b001100000000100010000;
+                    break;
+                case 0x1e:
+                    chip->ad_code_ctrl = 0b000100000000000100000;
+                    break;
+                case 0x1f:
+                    chip->ad_code_ctrl = 0b100001000000000000100;
+                    break;
+                case 0x20:
+                    chip->ad_code_ctrl = 0b100000000000000100100;
+                    break;
+                case 0x21:
+                    if (chip->tm_w1)
+                        chip->ad_code_ctrl = 0b000000000000000011000;
+                    else
+                    {
+                        next_ptr = 0x13;
+                        chip->ad_code_ctrl = 0b100000100000000000000;
+                    }
+                    break;
+                case 0x22:
+                    chip->ad_code_ctrl = 0b100000000000010010100;
+                    break;
+                case 0x23:
+                    chip->ad_code_ctrl = 0b100000000000000100100;
+                    break;
+                case 0x24:
+                    chip->ad_code_ctrl = 0b100000100000000000000;
+                    break;
+                case 0x25:
+                    chip->ad_code_ctrl = 0b100000000000000100000;
+                    break;
+                case 0x26:
+                    chip->ad_code_ctrl = 0b001100000000000000000;
+                    break;
+                case 0x27:
+                    chip->ad_code_ctrl = 0b000100000000000100000;
+                    break;
+                case 0x28:
+                    chip->ad_code_ctrl = 0b100001000000110010000;
+                    break;
+                case 0x29:
+                    chip->ad_code_ctrl = 0b100000000100000100000;
+                    break;
+                case 0x2a:
+                    chip->ad_code_ctrl = 0b000000100110100011000;
+                    break;
+                case 0x2b:
+                    chip->ad_code_ctrl = 0b000000000100000000000;
+                    break;
+                case 0x2c:
+                    chip->ad_code_ctrl = 0b001000000111000000000;
+                    break;
+                case 0x2d:
+                    chip->ad_code_ctrl = 0b000000000001000000000;
+                    break;
+                case 0x2e:
+                    chip->ad_code_ctrl = 0b000100000000001000100;
+                    break;
+                case 0x2f:
+                    chip->ad_code_ctrl = 0b000100000000000100100;
+                    break;
+                case 0x31:
+                    if (chip->tm_w1)
+                        next_ptr = 0x3f;
+                    if (chip->tm_w1)
+                    {
+                        next_ptr |= 1;
+                        chip->ad_code_ctrl = 0b000010010000100001000;
+                    }
+                    else
+                        next_ptr |= 0x31;
+                    break;
+
+                case 0x01|0x40:
+                    chip->ad_code_ctrl = 0b100000000000110110010;
+                    break;
+                case 0x02|0x40:
+                    chip->ad_code_ctrl = 0b000001000000000001000;
+                    break;
+                case 0x03|0x40:
+                    chip->ad_code_ctrl = 0b000000000000100000000;
+                    break;
+                case 0x04|0x40:
+                    chip->ad_code_ctrl = 0b001100000000100000010;
+                    break;
+                case 0x05|0x40:
+                    chip->ad_code_ctrl = 0b000100000000100100010;
+                    break;
+                case 0x06|0x40:
+                    if (chip->tm_w1)
+                        chip->ad_code_ctrl = 0b000000100010110010000;
+                    else
+                    {
+                        next_ptr = 0x24;
+                        chip->ad_code_ctrl = 0b100000000000010101010;
+                    }
+                    break;
+                case 0x08|0x40:
+                    chip->ad_code_ctrl = 0b100001000000000000000;
+                    break;
+                case 0x09|0x40:
+                    chip->ad_code_ctrl = 0b100000000000000100000;
+                    break;
+                case 0x0a|0x40:
+                    chip->ad_code_ctrl = 0b011000001011000000000;
+                    break;
+                case 0x0b|0x40:
+                    chip->ad_code_ctrl = 0b000000000001010000000;
+                    break;
+                case 0x0c|0x40:
+                    chip->ad_code_ctrl = 0b000000000000000011000;
+                    break;
+                case 0x0d|0x40:
+                    chip->ad_code_ctrl = 0b100001001000000000100;
+                    if (chip->tm_w1)
+                        chip->ad_code_ctrl |= 0b000000100000000000000;
+                    break;
+                case 0x0e|0x40:
+                    chip->ad_code_ctrl = 0b100000000000010110100;
+                    break;
+                case 0x0f|0x40:
+                    if (chip->tm_w1)
+                        chip->ad_code_ctrl = 0b000000000000000010000;
+                    break;
+                case 0x10|0x40:
+                    if (chip->tm_w1)
+                        chip->ad_code_ctrl = 0b000000000000000010000;
+                    break;
+                case 0x11|0x40:
+                    chip->ad_code_ctrl = 0b011000101000100011000;
+                    break;
+                case 0x12|0x40:
+                    chip->ad_code_ctrl = 0000000000000010010000;
+                    break;
+                case 0x13|0x40:
+                    if (chip->tm_w1)
+                        chip->ad_code_ctrl = 0b000000000000000010000;
+                    break;
+                case 0x14|0x40:
+                    if (chip->tm_w1)
+                        chip->ad_code_ctrl = 0b000000000000000010000;
+                    break;
+                case 0x18|0x40:
+                    chip->ad_code_ctrl = 0b011001000000010010000;
+                    break;
+                case 0x1a|0x40:
+                    chip->ad_code_ctrl = 0b100000100100010010110;
+                    break;
+                case 0x1b|0x40:
+                    chip->ad_code_ctrl = 0b100000000100000100110;
+                    break;
+                case 0x1c|0x40:
+                    chip->ad_code_ctrl = 0b001100000100000000000;
+                    break;
+                case 0x1d|0x40:
+                    chip->ad_code_ctrl = 0b000100000100000100000;
+                    break;
+                case 0x1e|0x40:
+                    chip->ad_code_ctrl = 0b000000000100010000000;
+                    break;
+                case 0x1f|0x40:
+                    chip->ad_code_ctrl = 0b001100000100000000110;
+                    break;
+                case 0x20|0x40:
+                    chip->ad_code_ctrl = 0b000100000000000100110;
+                    break;
+                case 0x21|0x40:
+                    chip->ad_code_ctrl = 0b000100000000001000100;
+                    break;
+                case 0x22|0x40:
+                    chip->ad_code_ctrl = 0b000100000000000100100;
+                    break;
+                case 0x23|0x40:
+                    chip->ad_code_ctrl = 0b100000000000010101010;
+                    break;
+                case 0x24|0x40:
+                    chip->ad_code_ctrl = 0b100000000000000000000;
+                    break;
+                case 0x25|0x40:
+                    chip->ad_code_ctrl = 0b100000000000000100000;
+                    break;
+                case 0x26|0x40:
+                    chip->ad_code_ctrl = 0b000000100010000000000;
+                    break;
+                case 0x29:
+                    if (chip->tm_w1)
+                        next_ptr = 0x29;
+                    else
+                        chip->ad_code_ctrl = 0b000001000000111010000;
+                    break;
+                case 0x2a:
+                    chip->ad_code_ctrl = 0b000000000000110001000;
+                    break;
+                case 0x2c:
+                    chip->ad_code_ctrl = 0b001000000000000000000;
+                    break;
+                case 0x2f:
+                    if (chip->tm_w1)
+                        next_ptr = 0x3f;
+                    if (chip->tm_w1)
+                    {
+                        next_ptr |= 1;
+                        chip->ad_code_ctrl = 0b100000100000000000010;
+                    }
+                    else
+                        next_ptr |= 0x2f;
+                    break;
+            }
+
+            if (chip->tm_w1)
+                next_ptr |= 64; // dec/enc
+
+            if (chip->tm_w1)
+                next_ptr |= 63; // reset
+
+            if (next_ptr & 63)
+                chip->ad_code_ptr[0] = next_ptr;
+            else
+                chip->ad_code_ptr[0] = (chip->ad_code_ptr[1] + 1) & 127;
+        }
+        if (chip->cclk2)
+        {
+            chip->ad_code_ptr[1] = chip->ad_code_ptr[0];
+        }
+    }
+
 #undef ADDRESS_MATCH
 }
