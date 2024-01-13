@@ -3105,6 +3105,58 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
 
         if (chip->cclk1)
         {
+            if (chip->ad_mem_ctrl_l & 1)
+                chip->ad_mem_addr_bank = chip->ad_address_cnt[3][1] & 7;
+
+            int t1 = 0;
+            if (chip->ad_mem_ctrl_l & 1)
+            {
+                t1 |= chip->ad_mem_bus & 254;
+                t1 |= chip->input.dt0;
+            }
+            if (chip->ad_mem_ctrl_l & 2)
+            {
+                if (chip->ad_reg_ramtype)
+                {
+                    t1 |= chip->ad_mem_data_l2;
+                }
+                else
+                {
+                    if (chip->tm_w2)
+                        t1 |= 255;
+                }
+            }
+            if (((chip->ad_mem_ctrl_l & 2) != 0 && chip->ad_reg_ramtype) || (chip->ad_mem_ctrl_l & 1) != 0)
+            {
+                chip->ad_mem_data_l1 = t1;
+            }
+            else if (chip->ad_mem_ctrl_l & 2)
+            {
+                int mask = 1 << chip->ad_mem_addr_bank;
+                chip->ad_mem_data_l1 &= ~mask;
+                chip->ad_mem_data_l1 |= mask & t2;
+            }
+
+            if (chip->ad_mem_ctrl_l & 32)
+                chip->ad_mem_bit_cnt[0] = 0;
+            else
+            {
+                int add = !chip->ad_reg_ramtype && (chip->ad_mem_ctrl_l & 0x100) != 0;
+                chip->ad_mem_bit_cnt[0] = (chip->ad_mem_bit_cnt[1] + add) & 7;
+            }
+
+            int t2 = 0;
+        }
+        if (chip->cclk2)
+        {
+            chip->ad_mem_bit_cnt[1] = chip->ad_mem_bit_cnt[0];
+        }
+
+        if (chip->ad_mem_ctrl_l & 0x400)
+            chip->ad_mem_bus = chip->ad_address_cnt[3][1];
+
+        if (chip->cclk1)
+        {
             int next_ptr = 0;
             chip->ad_code_ctrl = 0;
 

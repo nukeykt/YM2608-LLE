@@ -12,6 +12,7 @@ typedef struct {
     int gpio_a;
     int gpio_b;
     int test; // set to 1
+    int dt0;
 } fmopna_input_t;
 
 typedef struct {
@@ -544,6 +545,12 @@ typedef struct {
     int ad_mem_sync[2];
     int ad_mem_sync_run;
     int ad_mem_ptr_store;
+    int ad_mem_bus;
+    int ad_mem_data_l1;
+    int ad_mem_data_l2;
+    int ad_mem_addr_bank;
+    int ad_mem_data_bus;
+    int ad_mem_bit_cnt[2];
 
 
     int tm_w1;
