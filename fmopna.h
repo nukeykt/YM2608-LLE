@@ -548,6 +548,8 @@ typedef struct {
     int ad_mem_bus;
     int ad_mem_data_l1;
     int ad_mem_data_l2;
+    int ad_mem_data_l3;
+    int ad_mem_data_l4[2];
     int ad_mem_addr_bank;
     int ad_mem_data_bus;
     int ad_mem_bit_cnt[2];

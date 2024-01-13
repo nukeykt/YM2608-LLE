@@ -3122,7 +3122,7 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
                 }
                 else
                 {
-                    if (chip->tm_w2)
+                    if (chip->ad_mem_data_l2 & (1 << chip->ad_mem_bit_cnt[1]))
                         t1 |= 255;
                 }
             }
@@ -3134,7 +3134,7 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
             {
                 int mask = 1 << chip->ad_mem_addr_bank;
                 chip->ad_mem_data_l1 &= ~mask;
-                chip->ad_mem_data_l1 |= mask & t2;
+                chip->ad_mem_data_l1 |= mask & t1;
             }
 
             if (chip->ad_mem_ctrl_l & 32)
@@ -3146,14 +3146,73 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
             }
 
             int t2 = 0;
+            if (chip->tm_w1)
+            {
+                t2 |= chip->ad_mem_data_bus;
+            }
+            if (chip->ad_mem_ctrl_l & 4)
+            {
+                t2 |= chip->ad_mem_data_l1;
+            }
+            if (chip->ad_mem_ctrl_l & 8)
+            {
+                if (chip->ad_mem_data_l1 & (1 << chip->ad_mem_addr_bank))
+                    t2 |= 255;
+            }
+
+            if ((chip->ad_mem_ctrl_l & 4) != 0 || chip->tm_w1)
+            {
+                chip->ad_mem_data_l2 = t2;
+            }
+            else if (chip->ad_mem_ctrl_l & 8)
+            {
+                int mask = 1 << chip->ad_mem_bit_cnt[1];
+                chip->ad_mem_data_l2 &= ~mask;
+                chip->ad_mem_data_l2 |= mask & t2;
+            }
+
+            int t4;
+            if (chip->tm_w1)
+                t4 = chip->ad_mem_data_bus;
+            else if (chip->tm_w2)
+                t4 = ((chip->ad_mem_data_l4[1] & 127) << 1) | chip->tm_w1;
+            else
+                t4 = chip->ad_mem_data_l4[1];
         }
         if (chip->cclk2)
         {
             chip->ad_mem_bit_cnt[1] = chip->ad_mem_bit_cnt[0];
+
+            chip->ad_mem_data_l4[1] = chip->ad_mem_data_l4[0];
+        }
+
+        int write8 = chip->ad_is8 && chip->write3;
+        int read8 = chip->ad_is8 && chip->read3;
+        if (write8 || chip->tm_w2)
+        {
+            int t3 = 0;
+            if (write8)
+                t3 |= chip->data_bus1 & 255;
+            if (chip->tm_w2)
+                t3 |= chip->ad_mem_data_l2;
+            chip->ad_mem_data_l3 = t3;
+        }
+        if (read8)
+        {
+            chip->data_bus1 &= ~255;
+            chip->data_bus1 |= chip->ad_mem_data_l3 & 255;
         }
 
         if (chip->ad_mem_ctrl_l & 0x400)
             chip->ad_mem_bus = chip->ad_address_cnt[3][1];
+        if (chip->ad_mem_ctrl_l & 0x80)
+            chip->ad_mem_bus = chip->ad_mem_data_l1;
+        if (chip->tm_w1)
+            chip->ad_mem_data_bus = chip->ad_mem_data_l2;
+        if (chip->tm_w2)
+            chip->ad_mem_data_bus = chip->ad_mem_data_l3;
+        if (chip->tm_w3)
+            chip->ad_mem_data_bus = chip->ad_mem_data_l4[1];
 
         if (chip->cclk1)
         {
