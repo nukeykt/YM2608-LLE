@@ -537,6 +537,13 @@ typedef struct {
     int ad_limit_match[2];
     int ad_stop_match2[2];
     int ad_limit_match2[2];
+    int ad_start_sel[2];
+    int ad_address_cnt[4][2];
+    int ad_address_carry[2];
+    int ad_mem_cond[2];
+    int ad_mem_sync[2];
+    int ad_mem_sync_run;
+    int ad_mem_ptr_store;
 
 
     int tm_w1;

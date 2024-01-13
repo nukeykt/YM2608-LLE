@@ -2701,8 +2701,55 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
 
         if (chip->cclk1)
         {
+            if (chip->ic || (chip->ad_mem_ctrl_l & 64) != 0)
+                chip->ad_mem_sync[0] = 0;
+            else
+                chip->ad_mem_sync[0] = (chip->ad_mem_sync[1] + chip->ad_mem_sync_run) & 63;
+
             int next_ptr = 0;
             chip->ad_mem_ctrl = 0;
+
+            int sync = chip->ad_mem_sync_run || chip->tm_w2;
+
+            int cond = 0;
+            int cond_next = 0;
+
+            if (chip->tm_w1)
+            {
+                cond_next |= 1;
+            }
+            if (chip->tm_w1)
+            {
+                cond_next |= 2;
+            }
+            if (chip->tm_w1)
+            {
+                cond_next |= 4;
+            }
+            if (chip->tm_w1)
+            {
+                cond_next |= 8;
+            }
+            if (chip->tm_w1)
+            {
+                cond_next |= 16;
+            }
+
+            if (sync)
+            {
+                cond = chip->ad_mem_cond[1];
+            }
+            else
+            {
+                cond_next |= chip->ad_mem_cond[1];
+            }
+
+            if ((cond & 15) == 0)
+                cond |= 32;
+
+            chip->ad_mem_cond[0] = cond_next;
+
+            int store_addr = 0;
 
 #if 0
             if ((chip->ad_mem_code_ptr[1] & 0x2f) == 0xf)
@@ -2780,6 +2827,7 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
                     {
                         next_ptr = 0x3a | 0x40;
                         chip->ad_mem_ctrl |= 0b00100000000000;
+                        store_addr = 1;
                     }
                     break;
 
@@ -2787,7 +2835,7 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
                     chip->ad_mem_ctrl |= 0b00100100001000;
                     break;
                 case 0x1b:
-                    if (!chip->tm_w1)
+                    if (sync)
                     {
                         if (!chip->tm_w1)
                         {
@@ -2812,6 +2860,7 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
                     {
                         next_ptr = 0x3a | 0x40;
                         chip->ad_mem_ctrl |= 0b00100000000000;
+                        store_addr = 1;
                     }
                     break;
 
@@ -2819,7 +2868,7 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
                     chip->ad_mem_ctrl |= 0b00100000000100;
                     break;
                 case 0x2b:
-                    if (!chip->tm_w1)
+                    if (sync)
                     {
                         if (!chip->tm_w1)
                         {
@@ -2839,6 +2888,7 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
                     {
                         next_ptr = 0x3a | 0x40;
                         chip->ad_mem_ctrl |= 0b00100000000000;
+                        store_addr = 1;
                     }
                     break;
 
@@ -2856,7 +2906,7 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
                     break;
 
                 case 0x2f:
-                    if (chip->tm_w1)
+                    if (sync)
                     {
                         if (chip->tm_w1)
                         {
@@ -2872,31 +2922,32 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
                     {
                         next_ptr = 0x3a | 0x40;
                         chip->ad_mem_ctrl |= 0b00100000000000;
+                        store_addr = 1;
                     }
                     break;
 
                 case 0x3f:
-                    if (chip->tm_w1)
+                    if (sync)
                     {
-                        if (chip->tm_w1)
+                        if (cond & 1)
                         {
                             next_ptr |= 0x0 | 0x40;
                             chip->ad_mem_ctrl = 0b00100000100000;
                         }
-                        if (chip->tm_w1)
+                        if (cond & 2)
                         {
                             next_ptr |= 0x2f | 0x40;
                         }
-                        if (chip->tm_w1)
+                        if (cond & 4)
                         {
                             next_ptr |= 0x10 | 0x40;
                         }
-                        if (chip->tm_w1)
+                        if (cond & 8)
                         {
                             next_ptr |= 0x20 | 0x40;
                             chip->ad_mem_ctrl = 0b00100000100000;
                         }
-                        if (chip->tm_w1)
+                        if (cond & 32)
                         {
                             next_ptr |= 0x3f | 0x40;
                         }
@@ -2905,13 +2956,14 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
                     {
                         next_ptr = 0x3a | 0x40;
                         chip->ad_mem_ctrl |= 0b00100000000000;
+                        store_addr = 1;
                     }
                     break;
             }
 
-            if (chip->tm_w1)
+            if ((chip->ad_mem_ctrl_l & 64) != 0)
             {
-                next_ptr |= chip->tm_w1 | 0x40;
+                next_ptr |= chip->ad_mem_ptr_store | 0x40;
             }
 
             if (chip->ic)
@@ -2923,11 +2975,20 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
                 chip->ad_mem_code_ptr[0] = next_ptr & 63;
             else
                 chip->ad_mem_code_ptr[0] = (chip->ad_mem_code_ptr[1] + 1) & 63;
+
+            if (store_addr)
+                chip->ad_mem_ptr_store = chip->ad_mem_code_ptr[1];
         }
         if (chip->cclk2)
         {
             chip->ad_mem_code_ptr[1] = chip->ad_mem_code_ptr[0];
             chip->ad_mem_ctrl_l = chip->ad_mem_ctrl;
+
+            chip->ad_mem_cond[1] = chip->ad_mem_cond[0];
+
+            chip->ad_mem_sync[1] = chip->ad_mem_sync[0];
+
+            chip->ad_mem_sync_run = (chip->ad_mem_sync[0] & 40) != 40;
         }
 
         if (chip->cclk1)
@@ -2953,28 +3014,93 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
             }
 
             chip->ad_stop_match[0] = chip->ad_stop_match[1] << 1;
-            if (stop_val == chip->tm_w1)
+            if (stop_val == chip->ad_address_cnt[3][1])
                 chip->ad_stop_match[0] |= 1;
             chip->ad_limit_match[0] = chip->ad_limit_match[1] << 1;
-            if (limit_val == chip->tm_w1)
+            if (limit_val == chip->ad_address_cnt[3][1])
                 chip->ad_limit_match[0] |= 1;
 
-            int rst = chip->tm_w1 || (chip->ad_mem_ctrl_l & 32) != 0;
+            int rst = (chip->ad_mem_cond[1] & 2) != 0 || (chip->ad_start_sel[1] & 1) != 0;
 
             chip->ad_stop_match2[0] = (((chip->ad_stop_match[0] & 11) == 11 || chip->ad_stop_match2[1])
                 && !rst) || reset;
 
             chip->ad_limit_match2[0] = (chip->ad_limit_match[0] & 11) == 11;
+
+            chip->ad_start_sel[0] = chip->ad_start_sel[1];
+
+            int start_val = 0;
+            if (chip->ad_start_sel[1] & 1)
+                start_val |= ((chip->ad_reg_start_l & 15) << 5);
+            if (chip->ad_start_sel[1] & 2)
+                start_val |= ((chip->ad_reg_start_h & 31) << 4) | ((chip->ad_reg_start_l >> 4) & 15);
+            if (chip->ad_start_sel[1] & 4)
+                start_val |= (chip->ad_reg_start_h >> 5) & 7;
+
+            chip->ad_address_cnt[0][0] = 0;
+            chip->ad_address_cnt[1][0] = 0;
+            chip->ad_address_cnt[2][0] = 0;
+            chip->ad_address_cnt[3][0] = 0;
+
+            int add = chip->ad_address_cnt[3][1];
+
+            if ((chip->ad_mem_ctrl_l & 0x200) != 0 || chip->ad_address_carry[1])
+                add++;
+
+            int carry = ((add >> 9) & 1) != 0 && (chip->ad_mem_ctrl_l & 0x40) == 0;
+            add &= 0x1ff;
+
+            if (!chip->ad_limit_match2[1])
+            {
+                if (chip->ad_mem_ctrl_l & 0x800)
+                {
+                    if ((chip->ad_start_sel[1] & 7) != 0)
+                        chip->ad_address_cnt[0][0] = start_val;
+                    else
+                        chip->ad_address_cnt[0][0] = add;
+                    chip->ad_address_cnt[1][0] = chip->ad_address_cnt[0][1];
+                    chip->ad_address_cnt[2][0] = chip->ad_address_cnt[1][1];
+                }
+                else if (!chip->ic)
+                {
+                    chip->ad_address_cnt[0][0] = chip->ad_address_cnt[0][1];
+                    chip->ad_address_cnt[1][0] = chip->ad_address_cnt[1][1];
+                    chip->ad_address_cnt[2][0] = chip->ad_address_cnt[2][1];
+                }
+            }
+            if (chip->ad_mem_ctrl_l & 0x800)
+            {
+                chip->ad_address_cnt[3][0] = chip->ad_address_cnt[2][1];
+            }
+            else if (!chip->ic)
+            {
+                chip->ad_address_cnt[3][0] = chip->ad_address_cnt[3][1];
+            }
+
+            if (chip->ad_mem_ctrl_l & 0x800)
+                chip->ad_address_carry[0] = carry;
+            else
+                chip->ad_address_carry[0] = chip->ad_address_carry[1];
         }
         if (chip->cclk2)
         {
             chip->ad_end_sel[1] = chip->ad_end_sel[0] << 1;
             if (chip->ad_mem_ctrl & 16)
                 chip->ad_end_sel[1] |= 1;
+            chip->ad_start_sel[1] = chip->ad_start_sel[0] << 1;
+            if (chip->ad_mem_ctrl & 32)
+                chip->ad_start_sel[1] |= 1;
             chip->ad_stop_match[1] = chip->ad_stop_match[0];
             chip->ad_limit_match[1] = chip->ad_limit_match[0];
             chip->ad_stop_match2[1] = chip->ad_stop_match2[0];
             chip->ad_limit_match2[1] = chip->ad_limit_match2[0];
+
+            chip->ad_address_cnt[0][1] = chip->ad_address_cnt[0][0];
+            chip->ad_address_cnt[1][1] = chip->ad_address_cnt[1][0];
+            chip->ad_address_cnt[2][1] = chip->ad_address_cnt[2][0];
+            chip->ad_address_cnt[3][1] = chip->ad_address_cnt[3][0];
+
+            chip->ad_address_carry[1] = chip->ad_address_carry[0];
         }
 
         if (chip->cclk1)
