@@ -2629,16 +2629,19 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
             && !chip->ad_reg_rec && !chip->ad_start_l[2] && (chip->ad_w2_l[1] & 16) != 0
             && (chip->ad_read_port_l[1] & 4) != 0; // mem(1bit)->cpu
 
-        chip->ad_w6 = mode7 || mode9 || (chip->tm_w1 &&
+        int code_end = ad_code_end[1] && (chip->ad_w2_l[1] & 16) != 0;
+
+        int repeat = chip->ad_reg_repeat && code_end && !chip->ad_code_ed_end[1];
+
+        int w28 = repeat || (chip->ad_mode6_l[1] && !mode6;
+
+        int w6 = mode7 || mode9 || (w28 &&
             ((!chip->ad_reg_rom && chip->ad_reg_ramtype)
                 || (!chip->ad_reg_ramtype && chip->ad_reg_rom)));
 
         int dac_damode = chip->ad_reg_da_ad && chip->ad_sample_l[2];
 
         int dac_admode = (chip->ad_reg_rec && chip->ad_start_l[2]) || (!chip->ad_reg_da_ad && chip->ad_sample_l[2]);
-
-        if (chip->cclk1)
-            chip->ad_repeat_trig_l = ad_code_end[1] && (chip->ad_w2_l[1] & 16) != 0;
 
         int sync = chip->ad_mem_sync_run || !chip->ad_mem_w20[1];
         int w16 = !chip->ad_mem_w10[1] && sync;
@@ -2660,6 +2663,10 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
 
         int w25 = p2 || p3;
 
+        int w26 = mode5 && !chip->ad_rec_start_l[1];
+        int w27 = mode11 || (!chip->ad_reg_rom && w28);
+
+        int w29 = w28 || w26 || mode10 || mode8; // start dsp
 
         if (chip->cclk1)
         {
@@ -2691,6 +2698,9 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
             chip->ad_w12[0] = t1;
 
             chip->ad_w13[0] = t1 && !chip->ad_w12[1];
+
+            chip->ad_rec_start_l[0] = mode5;
+            chip->ad_mode6_l[0] = mode6;
             
         }
         if (chip->cclk2)
@@ -2722,6 +2732,9 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
             chip->ad_w12[1] = chip->ad_w12[0];
 
             chip->ad_w13[1] = chip->ad_w13[0];
+
+            chip->ad_rec_start_l[1] = chip->ad_rec_start_l[0];
+            chip->ad_mode6_l[1] = chip->ad_mode6_l[0];
         }
         int cond = 0;
 
@@ -2737,19 +2750,19 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
 
             int cond_next = 0;
 
-            if (chip->tm_w1)
+            if (mode1)
             {
                 cond_next |= 1;
             }
-            if (chip->tm_w1)
+            if (w26)
             {
                 cond_next |= 2;
             }
-            if (chip->tm_w1)
+            if (w27)
             {
                 cond_next |= 4;
             }
-            if (chip->tm_w1)
+            if (w6)
             {
                 cond_next |= 8;
             }
@@ -3221,11 +3234,7 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
             int mem_en = chip->ad_start_l[2] && chip->ad_reg_memdata;
 
             chip->ad_mem_mem_en_l[0] = mem_en;
-
-            int code_end = ad_code_end[1] && (chip->ad_w2_l[1] & 16) != 0;
-            chip->ad_code_end[0] = code_end;
-
-            int repeat = chip->ad_reg_repeat && code_end && !chip->ad_code_end[1];
+            chip->ad_code_ed_end[0] = code_end;
 
             int w9 = (mem_en && !chip->ad_mem_mem_en_l[1] && !chip->ad_reg_rec) ||
                 (!chip->ad_reg_memdata && chip->ad_start_l[2]) ||
@@ -3234,11 +3243,11 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
 
             chip->ad_mem_mem_stop[0] = !mem_en && chip->ad_mem_mem_en_l[1];
 
-            int w11 = reset || chip->ad_code_end[1] || chip->ad_w13[1] || chip->ad_mem_w21;
+            int w11 = reset || chip->ad_mem_mem_stop[1] || chip->ad_w13[1] || chip->ad_mem_w21;
 
             chip->ad_mem_w10[0] = w9 || (chip->ad_mem_w10[1] && !w11);
 
-            int w14 = reset || chip->ad_code_end[1] || chip->ad_w13[1] || w16 || (!chip->ad_reg_memdata && (p3 || p4));
+            int w14 = reset || chip->ad_mem_mem_stop[1] || chip->ad_w13[1] || w16 || (!chip->ad_reg_memdata && (p3 || p4));
 
             chip->ad_mem_w15[0] = (mem_en || chip->ad_rw_en) || (chip->ad_mem_w15[1] && !w14);
 
@@ -3276,7 +3285,7 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
 
             chip->ad_mem_mem_en_l[1] = chip->ad_mem_mem_en_l[0];
 
-            chip->ad_code_end[1] = chip->ad_code_end[0];
+            chip->ad_code_ed_end[1] = chip->ad_code_ed_end[0];
 
             chip->ad_mem_mem_stop[1] = chip->ad_mem_mem_stop[0];
 
@@ -3350,6 +3359,8 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
 
         if (chip->cclk1)
         {
+            int w44 = (ad_dsp_cnt1_run[1] & 3) == 0;
+
             int next_ptr = 0;
             chip->ad_code_ctrl = 0;
 
@@ -3357,7 +3368,7 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
             {
                 case 0x3f:
                 case 0x3f|0x40:
-                    if (chip->tm_w1)
+                    if (w29)
                     {
                         chip->ad_code_ctrl = 0b000100000011110011001;
                         next_ptr = 0x32;
@@ -3690,7 +3701,7 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
                     chip->ad_code_ctrl = 0b000000100010000000000;
                     break;
                 case 0x29:
-                    if (chip->tm_w1)
+                    if (!w44)
                         next_ptr = 0x29;
                     else
                         chip->ad_code_ctrl = 0b000001000000111010000;
@@ -3732,7 +3743,154 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
             chip->ad_code_ptr[1] = chip->ad_code_ptr[0];
             chip->ad_code_end[1] = chip->ad_code_end[0];
             chip->ad_code_ctrl_l = chip->ad_code_ctrl;
+
+            chip->ad_dsp_ctrl = 0;
+            if (chip->ad_code_ctrl & 8)
+                chip->ad_dsp_ctrl |= 1;
+            if (chip->ad_code_ctrl & 16)
+                chip->ad_dsp_ctrl |= 2;
+            if (chip->ad_code_ctrl & 0x80)
+                chip->ad_dsp_ctrl |= 4;
+            if (chip->ad_code_ctrl & 0x100)
+                chip->ad_dsp_ctrl |= 8;
         }
+
+        int w30 = chip->ad_dsp_ctrl == 5 || chip->ad_dsp_ctrl == 13;
+        int w31 = chip->ad_dsp_ctrl == 5 || chip->ad_dsp_ctrl == 13
+            || chip->ad_dsp_ctrl == 3;
+
+        int w35 = chip->ad_dsp_w36[1];
+        if ((chip->ad_dsp_w31_l[1] & 2) != 0)
+            w35 |= chip->ad_dsp_w33;
+
+        int cnt1;
+        if ((chip->ad_dsp_w31_l[1] & 2) != 0)
+            cnt1 = 0;
+        else
+        {
+            int inc = (chip->ad_dsp_cnt1_run[1] & 1) != 0;
+            cnt1 = (chip->ad_dsp_cnt1[1] + inc) & 7;
+        }
+
+        if (chip->ad_dsp_ctrl == 1)
+            chip->ad_dsp_bus = chip->ad_reg_delta_l;
+        if (chip->ad_dsp_delta_sel[1])
+            chip->ad_dsp_bus = chip->ad_reg_delta_h;
+
+        if (chip->cclk1)
+        {
+            chip->ad_dsp_delta_sel[0] = chip->ad_dsp_ctrl == 1;
+
+            chip->ad_dsp_w30_l[0] = chip->ad_dsp_w30_l[1] << 1;
+            chip->ad_dsp_w30_l[0] |= w31;
+
+            chip->ad_dsp_w31_l[0] = chip->ad_dsp_w31_l[1] << 1;
+            chip->ad_dsp_w31_l[0] |= w31;
+
+            chip->ad_dsp_w36[0] = w35 >> 1;
+            chip->ad_dsp_w35_l = w35 & 1;
+
+            chip->ad_dsp_cnt1[0] = cnt1;
+
+            chip->ad_dsp_cnt1_run[0] = chip->ad_dsp_cnt1_run[1];
+
+            int accm2 = chip->chip->ad_dsp_mul_accm2_add1 + chip->ad_dsp_mul_accm2_add2 + chip->ad_dsp_mul_accm1_c;;
+
+            chip->ad_dsp_mul_accm1_add1 = (w35 & 1) != 0 ? chip->ad_dsp_w34 : 0;
+            chip->ad_dsp_mul_accm1_add2 = cnt1 != 0 ? (chip->ad_dsp_mul_accm1[0] >> 1) | ((accm2 & 1) << 7) : 0;
+
+            chip->ad_dsp_mul_accm1[1] = chip->ad_dsp_mul_accm1[0];
+
+            chip->ad_dsp_w32_l = ad_dsp_w32;
+
+            chip->ad_dsp_mul_accm2_load = cnt1 != 0;
+
+            chip->ad_dsp_mul_accm2 = accm2;
+
+            chip->ad_dsp_w38[0] = chip->ad_dsp_w38[1] << 1;
+            if (cnt1 != 0 && (chip->ad_dsp_mul_accm1[0] & 1) != 0)
+                chip->ad_dsp_w38[0] |= 1;
+
+            chip->ad_dsp_w41[0] = chip->ad_dsp_w41[1] << 1;
+            if (chip->ad_dsp_ctrl == 11)
+                chip->ad_dsp_w41[0] |= 1;
+
+            chip->ad_dsp_w43[0] = (chip->ad_dsp_w43[1] << 1) | ((ad_dsp_cnt1_run[1] & 3) == 2);
+        }
+        if (chip->cclk2)
+        {
+            chip->ad_dsp_delta_sel[1] = chip->ad_dsp_delta_sel[0];
+            chip->ad_dsp_w30_l[1] = chip->ad_dsp_w30_l[0];
+            chip->ad_dsp_w31_l[1] = chip->ad_dsp_w31_l[0];
+
+            chip->ad_dsp_w36[1] = chip->ad_dsp_w36[0];
+
+            chip->ad_dsp_cnt1[1] = chip->ad_dsp_cnt1[0];
+
+            chip->ad_dsp_cnt1_run[1] = chip->ad_dsp_cnt1_run[0] << 1;
+            if (chip->ad_dsp_cnt1[0] != 7)
+                chip->ad_dsp_cnt1_run[1] |= 1;
+
+            int accm1 = chip->ad_dsp_mul_accm1_add1 + chip->ad_dsp_mul_accm1_add2;
+
+            chip->ad_dsp_mul_accm1_c = (accm1 & 256) != 0;
+
+            chip->ad_dsp_mul_accm1[0] = accm1 & 255;
+
+            int w37 = (chip->ad_dsp_w38[0] & 2) == 0 && (chip->ad_dsp_mul_accm1[1] & 63) == 0;
+            int w39 = (chip->ad_dsp_mul_accm1[1] & 192) == 0 && (chip->ad_dsp_mul_accm2 & 511) == 0;
+
+            int b8 = (chip->ad_dsp_w32_l & 0x100) == 0 && !(w37 && w39);
+
+            chip->ad_dsp_mul_accm2_add1 = chip->ad_dsp_w35_l ? (chip->ad_dsp_w32_l ^ 0x100) : 0;
+            chip->ad_dsp_mul_accm2_add2 = chip->ad_dsp_mul_accm2_load ? (chip->ad_dsp_mul_accm2 >> 1) | (b8 << 8) : 0;
+
+
+            chip->ad_dsp_w38[1] = chip->ad_dsp_w38[0];
+
+            chip->ad_dsp_w41[1] = chip->ad_dsp_w41[0];
+
+            int w42 = (chip->ad_dsp_mul_accm2 & 0x1c0) != 0x00 || (chip->ad_dsp_mul_accm2 & 0x30) == 0x10;
+
+            if (chip->ad_dsp_w41[0] & 2)
+            {
+                chip->ad_dsp_w40 = 0;
+                if (!w42)
+                {
+                    if ((chip->ad_dsp_w38[0] & 2) != 0)
+                        chip->ad_dsp_w40 |= 1;
+                    chip->ad_dsp_w40 |= (chip->ad_dsp_mul_accm1[1] & 255) << 1;
+                    chip->ad_dsp_w40 |= (chip->ad_dsp_mul_accm2 & 15) << 9;
+                }
+                chip->ad_dsp_w40 |= (chip->ad_dsp_mul_accm2 & 0x30) << 9;
+                if (w42)
+                    chip->ad_dsp_w40 |= 0x6000;
+                if (w39)
+                    chip->ad_dsp_w40 |= 127;
+            }
+            else
+            {
+                chip->ad_dsp_w40 = (chip->ad_dsp_mul_accm1[1] >> 1) & 127;
+                chip->ad_dsp_w40 |= (chip->ad_dsp_mul_accm2 & 511) << 7;
+            }
+
+            chip->ad_dsp_w43[1] = chip->ad_dsp_w43[0];
+        }
+
+
+        if (w31 && (chip->ad_dsp_w31_l[0] & 1) == 0)
+            chip->ad_dsp_w33 = chip->ad_dsp_bus;
+        if ((chip->ad_dsp_w31_l[1] & 1) != 0 && (chip->ad_dsp_w31[0] & 2) == 0)
+            chip->ad_dsp_w34 = chip->ad_dsp_bus;
+        if ((chip->ad_dsp_w31_l[1] & 2) != 0 && (chip->ad_dsp_w31[0] & 4) == 0)
+        {
+            chip->ad_dsp_w32 = chip->ad_dsp_bus;
+            if ((chip->ad_dsp_w32 & 128) == 0 || (chip->ad_dsp_w30_l[1] & 2) == 0)
+                chip->ad_dsp_w32 |= 256;
+        }
+
+        if ((chip->ad_dsp_w43[1] & 1) != 0 && (chip->ad_dsp_w43[0] & 2) == 0)
+            chip->ad_dsp_w45 = chip->ad_dsp_w40;
     }
 
 #undef ADDRESS_MATCH
