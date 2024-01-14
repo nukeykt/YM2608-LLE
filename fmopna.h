@@ -600,6 +600,8 @@ typedef struct {
     int ad_dsp_w41[2];
     int ad_dsp_w43[2];
     int ad_dsp_w45;
+    int ad_dsp_w46[2];
+    int ad_output;
 
     int tm_w1;
     int tm_w2;

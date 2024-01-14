@@ -3776,6 +3776,18 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
             chip->ad_dsp_bus = chip->ad_reg_delta_l;
         if (chip->ad_dsp_delta_sel[1])
             chip->ad_dsp_bus = chip->ad_reg_delta_h;
+        if ((chip->ad_code_ctrl_l & 0x40) != 0)
+            chip->ad_dsp_bus = chip->ad_dsp_w45 & 255;
+        if (chip->ad_dsp_w46[1])
+            chip->ad_dsp_bus = (chip->ad_dsp_w45 >> 8) & 255;
+        if (chip->ad_dsp_ctrl == 3)
+        {
+            static const int adjust[8] = {
+                57, 57, 57, 57, 77, 102, 128, 153
+            };
+
+            chip->ad_dsp_bus = adjust[chip->ad_mem_nibble & 7];
+        }
 
         if (chip->cclk1)
         {
@@ -3816,6 +3828,8 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
                 chip->ad_dsp_w41[0] |= 1;
 
             chip->ad_dsp_w43[0] = (chip->ad_dsp_w43[1] << 1) | ((ad_dsp_cnt1_run[1] & 3) == 2);
+
+            chip->ad_dsp_w46[0] = (chip->ad_code_ctrl_l & 0x40) != 0;
         }
         if (chip->cclk2)
         {
@@ -3875,6 +3889,8 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
             }
 
             chip->ad_dsp_w43[1] = chip->ad_dsp_w43[0];
+
+            chip->ad_dsp_w46[1] = chip->ad_dsp_w46[0];
         }
 
 
@@ -3891,6 +3907,11 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
 
         if ((chip->ad_dsp_w43[1] & 1) != 0 && (chip->ad_dsp_w43[0] & 2) == 0)
             chip->ad_dsp_w45 = chip->ad_dsp_w40;
+
+        if (chip->ad_dsp_w45 == 0x1fff || (chip->ad_dsp_w45 & 0x1ffe) == 0)
+            chip->ad_output = 0;
+        else
+            chip->ad_output = chip->ad_dsp_w45;
     }
 
 #undef ADDRESS_MATCH
