@@ -553,7 +553,27 @@ typedef struct {
     int ad_mem_addr_bank;
     int ad_mem_data_bus;
     int ad_mem_bit_cnt[2];
-
+    int ad_mem_w7[2];
+    int ad_mem_shift_cnt[2];
+    int ad_mem_nibble;
+    int ad_mem_w8[2];
+    int ad_mem_nibble_msb;
+    int ad_mem_nibble_load;
+    int ad_mem_shift_cnt0_l[2];
+    int ad_mem_mem_en_l[2];
+    int ad_code_end[2];
+    int ad_mem_mem_stop[2];
+    int ad_mem_w10[2];
+    int ad_w12[2];
+    int ad_w13[2];
+    int ad_mem_w15[2];
+    int ad_brdy_set_l[2];
+    int ad_mem_w17[2];
+    int ad_mem_rw_en[2];
+    int ad_mem_w20[2];
+    int ad_mem_ucnt[2];
+    int ad_mem_w21;
+    int ad_mem_w22;
 
     int tm_w1;
     int tm_w2;

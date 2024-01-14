@@ -2629,8 +2629,6 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
             && !chip->ad_reg_rec && !chip->ad_start_l[2] && (chip->ad_w2_l[1] & 16) != 0
             && (chip->ad_read_port_l[1] & 4) != 0; // mem(1bit)->cpu
 
-        mode2 || mode3 || mode4
-
         chip->ad_w6 = mode7 || mode9 || (chip->tm_w1 &&
             ((!chip->ad_reg_rom && chip->ad_reg_ramtype)
                 || (!chip->ad_reg_ramtype && chip->ad_reg_rom)));
@@ -2642,7 +2640,25 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
         if (chip->cclk1)
             chip->ad_repeat_trig_l = ad_code_end[1] && (chip->ad_w2_l[1] & 16) != 0;
 
-        ad_code_end[1] && (chip->ad_w2_l[1] & 16) != 0;
+        int sync = chip->ad_mem_sync_run || !chip->ad_mem_w20[1];
+        int w16 = !chip->ad_mem_w10[1] && sync;
+
+        int w18 = !(chip->ad_mem_w17[1] && (sync || !chip->ad_reg_memdata));
+
+        int p5 = ((chip->ad_code_ctrl_l & 1) != 0 && !chip->ad_reg_rec && chip->ad_start_l[2] && (w16 || !chip->ad_reg_memdata));
+
+        int w19 = !(w18 && chip->ad_start_l[2] && !p5);
+
+        int p1 = chip->ad_reg_rec && w16 && w19 && chip->ad_reg_memdata && chip->ad_mem_w15[1];
+        int p2 = !chip->ad_reg_rec && w16 && w19 && chip->ad_reg_memdata && chip->ad_mem_w15[1];
+        int p3 = chip->ad_reg_rec && !w18;
+        int p4 = (!chip->ad_reg_rec && (w16 || !chip->ad_reg_memdata) && !w18) || p5;
+
+        int w23 = p1 || p3;
+
+        int w24 = (p4 && !chip->ad_reg_memdata) || (!chip->ad_start_l[2] && p1);
+
+        int w25 = p2 || p3;
 
 
         if (chip->cclk1)
@@ -2664,12 +2680,17 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
             chip->ad_w2[0] = (chip->ad_w2[1] && t1) || (chip->ad_rw_en && chip->ad_w4[1])
                 || (t1 && (reset || w3 || (chip->ad_w4[1] && chip->ad_start_l[2])));
 
-            chip->ad_w4[0] = (chip->ad_w4[1] && t1) || w3 || (chip->ad_addr_isend_l && chip->tm_w2);
+            chip->ad_w4[0] = (chip->ad_w4[1] && t1) || w3 || (chip->ad_addr_isend_l && p2);
 
             chip->ad_w2_l[0] = (chip->ad_w2_l[1] << 1) | chip->ad_w2[1];
 
             chip->ad_addr_isend_l2[0] = chip->ad_addr_isend_l;
 
+            int t1 = mode2 || mode3 || mode4;
+
+            chip->ad_w12[0] = t1;
+
+            chip->ad_w13[0] = t1 && !chip->ad_w12[1];
             
         }
         if (chip->cclk2)
@@ -2694,10 +2715,15 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
 
             chip->ad_w2_l[1] = chip->ad_w2_l[0];
 
-            chip->ad_addr_isend_l = chip->tm_w1;
+            chip->ad_addr_isend_l = chip->ad_stop_match2[0];
 
             chip->ad_addr_isend_l2[1] = chip->ad_addr_isend_l2[0];
+
+            chip->ad_w12[1] = chip->ad_w12[0];
+
+            chip->ad_w13[1] = chip->ad_w13[0];
         }
+        int cond = 0;
 
         if (chip->cclk1)
         {
@@ -2709,9 +2735,6 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
             int next_ptr = 0;
             chip->ad_mem_ctrl = 0;
 
-            int sync = chip->ad_mem_sync_run || chip->tm_w2;
-
-            int cond = 0;
             int cond_next = 0;
 
             if (chip->tm_w1)
@@ -2730,7 +2753,7 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
             {
                 cond_next |= 8;
             }
-            if (chip->tm_w1)
+            if (w23)
             {
                 cond_next |= 16;
             }
@@ -2802,24 +2825,24 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
                     chip->ad_mem_ctrl |= 0b00000110000000;
                     break;
                 case 0xd:
-                    if (!chip->tm_w1)
+                    if (sync)
                     {
-                        if (!chip->tm_w1)
+                        if (chip->ad_stop_match2[1])
                         {
-                            next_ptr |= 0x7f;
+                            next_ptr |= 0x3f|0x40;
                         }
-                        if (!chip->tm_w1)
+                        if (!chip->ad_mem_w22)
                         {
-                            next_ptr |= 0x44;
+                            next_ptr |= 0x40|0x40;
                             chip->ad_mem_ctrl |= 0b10011000000000;
                         }
-                        if (!chip->tm_w1)
+                        if ((cond & 16) == 0 && chip->ad_mem_w22)
                         {
-                            next_ptr |= 0x4d;
+                            next_ptr |= 0xd|0x40;
                         }
-                        if (!chip->tm_w1)
+                        if ((cond & 16) != 0 && chip->ad_mem_w22)
                         {
-                            next_ptr |= 0x44;
+                            next_ptr |= 0x4|0x40;
                             chip->ad_mem_ctrl |= 0b10011000000000;
                         }
                     }
@@ -2837,20 +2860,20 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
                 case 0x1b:
                     if (sync)
                     {
-                        if (!chip->tm_w1)
+                        if (chip->ad_stop_match2[1])
                         {
                             next_ptr |= 0x3f|0x40;
                         }
-                        if (!chip->tm_w1)
+                        if (!chip->ad_mem_w22)
                         {
                             next_ptr |= 0x14|0x40;
                             chip->ad_mem_ctrl |= 10011000000000;
                         }
-                        if (!chip->tm_w1)
+                        if ((cond & 16) == 0 && chip->ad_mem_w22)
                         {
                             next_ptr |= 0x1b|0x40;
                         }
-                        if (!chip->tm_w1)
+                        if ((cond & 16) != 0 && chip->ad_mem_w22)
                         {
                             next_ptr |= 0x14|0x40;
                             chip->ad_mem_ctrl |= 10011000000000;
@@ -2870,15 +2893,15 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
                 case 0x2b:
                     if (sync)
                     {
-                        if (!chip->tm_w1)
+                        if (chip->ad_stop_match2[1])
                         {
                             next_ptr |= 0x3f|0x40;
                         }
-                        if (!chip->tm_w1)
+                        if ((cond & 16) == 0)
                         {
                             next_ptr |= 0x2b|0x40;
                         }
-                        if (!chip->tm_w1)
+                        if ((cond & 16) != 0)
                         {
                             next_ptr |= 0x24|0x40;
                             chip->ad_mem_ctrl |= 10011000000000;
@@ -2908,7 +2931,7 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
                 case 0x2f:
                     if (sync)
                     {
-                        if (chip->tm_w1)
+                        if ((cond & 16) == 0)
                         {
                             next_ptr = 0x2f | 0x40;
                         }
@@ -3105,6 +3128,7 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
 
         if (chip->cclk1)
         {
+
             if (chip->ad_mem_ctrl_l & 1)
                 chip->ad_mem_addr_bank = chip->ad_address_cnt[3][1] & 7;
 
@@ -3146,7 +3170,7 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
             }
 
             int t2 = 0;
-            if (chip->tm_w1)
+            if (p1)
             {
                 t2 |= chip->ad_mem_data_bus;
             }
@@ -3160,7 +3184,7 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
                     t2 |= 255;
             }
 
-            if ((chip->ad_mem_ctrl_l & 4) != 0 || chip->tm_w1)
+            if ((chip->ad_mem_ctrl_l & 4) != 0 || p1)
             {
                 chip->ad_mem_data_l2 = t2;
             }
@@ -3172,29 +3196,139 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
             }
 
             int t4;
-            if (chip->tm_w1)
+            if (p4)
                 t4 = chip->ad_mem_data_bus;
-            else if (chip->tm_w2)
+            else if (chip->ad_mem_w7[1])
                 t4 = ((chip->ad_mem_data_l4[1] & 127) << 1) | chip->tm_w1;
             else
                 t4 = chip->ad_mem_data_l4[1];
+
+            chip->ad_mem_data_l4[0] = t4;
+
+            chip->ad_mem_w7[0] = (chip->ad_code_ctrl_l & 0x1000) != 0;
+            chip->ad_mem_w8[0] = (chip->ad_code_ctrl_l & 0x800) != 0;
+
+            int add = chip->ad_mem_shift_cnt[1] + chip->ad_mem_w7[1];
+            int of = (add & 8) != 0;
+
+            if (!chip->ad_start_l[2])
+                chip->ad_mem_shift_cnt[0] = 0;
+            else
+                chip->ad_mem_shift_cnt[0] = add & 7;
+
+            chip->ad_mem_shift_cnt0_l[0] = (chip->ad_mem_shift_cnt[1] & 3) == 0;
+
+            int mem_en = chip->ad_start_l[2] && chip->ad_reg_memdata;
+
+            chip->ad_mem_mem_en_l[0] = mem_en;
+
+            int code_end = ad_code_end[1] && (chip->ad_w2_l[1] & 16) != 0;
+            chip->ad_code_end[0] = code_end;
+
+            int repeat = chip->ad_reg_repeat && code_end && !chip->ad_code_end[1];
+
+            int w9 = (mem_en && !chip->ad_mem_mem_en_l[1] && !chip->ad_reg_rec) ||
+                (!chip->ad_reg_memdata && chip->ad_start_l[2]) ||
+                repeat ||
+                w23;
+
+            chip->ad_mem_mem_stop[0] = !mem_en && chip->ad_mem_mem_en_l[1];
+
+            int w11 = reset || chip->ad_code_end[1] || chip->ad_w13[1] || chip->ad_mem_w21;
+
+            chip->ad_mem_w10[0] = w9 || (chip->ad_mem_w10[1] && !w11);
+
+            int w14 = reset || chip->ad_code_end[1] || chip->ad_w13[1] || w16 || (!chip->ad_reg_memdata && (p3 || p4));
+
+            chip->ad_mem_w15[0] = (mem_en || chip->ad_rw_en) || (chip->ad_mem_w15[1] && !w14);
+
+            chip->ad_brdy_set_l[0] = chip->ad_reg_memdata ? (!chip->ad_mem_w15[1] && w16)
+                : !chip->ad_mem_w15[1];
+
+            chip->ad_mem_w17[0] = of || (chip->ad_mem_w17[1] && w18);
+
+            chip->ad_mem_rw_en[0] = chip->ad_mem_rw_en[1] << 1;
+            chip->ad_mem_rw_en[0] |= chip->ad_rw_en;
+
+            chip->ad_mem_w20[0] = ((chip->ad_mem_rw_en[1] & 2) != 0 || chip->ad_start_l[2] || reset) ||
+                (chip->ad_mem_w20[1] && (cond & 32) != 0);
+
+            if (chip->ad_mem_ctrl_l & 32)
+                chip->ad_mem_ucnt[0] = 0;
+            else
+            {
+                int inc = !chip->ad_reg_ramtype && (chip->ad_mem_ctrl_l & 0x100) != 0;
+                chip->ad_mem_ucnt[0] = (chip->ad_mem_ucnt[1] + inc) & 7;
+            }
         }
         if (chip->cclk2)
         {
             chip->ad_mem_bit_cnt[1] = chip->ad_mem_bit_cnt[0];
 
             chip->ad_mem_data_l4[1] = chip->ad_mem_data_l4[0];
+
+            chip->ad_mem_w7[1] = chip->ad_mem_w7[0];
+            chip->ad_mem_w8[1] = chip->ad_mem_w8[0];
+
+            chip->ad_mem_shift_cnt[1] = chip->ad_mem_shift_cnt[0];
+
+            chip->ad_mem_shift_cnt0_l[1] = chip->ad_mem_shift_cnt0_l[0];
+
+            chip->ad_mem_mem_en_l[1] = chip->ad_mem_mem_en_l[0];
+
+            chip->ad_code_end[1] = chip->ad_code_end[0];
+
+            chip->ad_mem_mem_stop[1] = chip->ad_mem_mem_stop[0];
+
+            chip->ad_mem_w10[1] = chip->ad_mem_w10[0];
+
+            chip->ad_mem_w15[1] = chip->ad_mem_w15[0];
+
+            chip->ad_brdy_set_l[1] = chip->ad_brdy_set_l[0];
+
+            chip->ad_mem_w17[1] = chip->ad_mem_w17[0];
+
+            chip->ad_mem_rw_en[1] = chip->ad_mem_rw_en[0];
+
+            chip->ad_mem_ucnt[1] = chip->ad_mem_ucnt[0];
+
+            chip->ad_mem_w21 = (chip->ad_mem_ctrl & 4) != 0 ||
+                (chip->ad_reg_ramtype && (chip->ad_mem_ctrl & 0x100) != 0) ||
+                (!chip->ad_reg_ramtype && (chip->ad_mem_ctrl & 0x100) != 0 && chip->ad_mem_ucnt[0] == 7);
+
+            chip->ad_mem_w22 = chip->ad_mem_ucnt[0] == 0;
+
+            int nibble_load;
+            if (chip->ad_reg_rec)
+                nibble_load = (chip->ad_mem_shift_cnt[1] & 3) == 0 && !chip->ad_mem_shift_cnt0_l[1];
+            else
+                nibble_load = (chip->ad_mem_shift_cnt[1] & 3) == 0 && chip->ad_mem_w7[1];
+
+            if (chip->cclk1)
+                chip->ad_mem_nibble_load = nibble_load;
+
+            if (nibble_load && !chip->ad_mem_nibble_load)
+            {
+                int nibble;
+                if (chip->ad_reg_rec)
+                    nibble = (chip->ad_mem_data_l4[1] & 15) ^ 8;
+                else
+                    nibble = (chip->ad_mem_data_l4[1] >> 4) & 15;
+                chip->ad_mem_nibble = nibble;
+            }
+
+            chip->ad_mem_nibble_msb = chip->ad_mem_w8[1] && (chip->ad_mem_nibble & 8) != 0
         }
 
         int write8 = chip->ad_is8 && chip->write3;
         int read8 = chip->ad_is8 && chip->read3;
-        if (write8 || chip->tm_w2)
+        if (write8 || w25)
         {
             int t3 = 0;
             if (write8)
                 t3 |= chip->data_bus1 & 255;
-            if (chip->tm_w2)
-                t3 |= chip->ad_mem_data_l2;
+            if (w25)
+                t3 |= chip->ad_mem_data_bus;
             chip->ad_mem_data_l3 = t3;
         }
         if (read8)
@@ -3207,12 +3341,12 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
             chip->ad_mem_bus = chip->ad_address_cnt[3][1];
         if (chip->ad_mem_ctrl_l & 0x80)
             chip->ad_mem_bus = chip->ad_mem_data_l1;
-        if (chip->tm_w1)
+        if (p2)
             chip->ad_mem_data_bus = chip->ad_mem_data_l2;
-        if (chip->tm_w2)
+        if (w24)
             chip->ad_mem_data_bus = chip->ad_mem_data_l3;
-        if (chip->tm_w3)
-            chip->ad_mem_data_bus = chip->ad_mem_data_l4[1];
+        if (p3)
+            chip->ad_mem_data_bus = chip->ad_mem_data_l4[1] ^ 0x88;
 
         if (chip->cclk1)
         {
@@ -3265,7 +3399,7 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
                     chip->ad_code_ctrl = 0b000000000000110011001;
                     break;
                 case 0x3a|0x40:
-                    if (chip->tm_w1)
+                    if (!p5)
                     {
                         next_ptr = 0x3a;
                         chip->ad_code_ctrl = 0b000000000000110011001;
@@ -3485,18 +3619,18 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
                     break;
                 case 0x0d|0x40:
                     chip->ad_code_ctrl = 0b100001001000000000100;
-                    if (chip->tm_w1)
+                    if (chip->ad_mem_data_l4[0] & 128)
                         chip->ad_code_ctrl |= 0b000000100000000000000;
                     break;
                 case 0x0e|0x40:
                     chip->ad_code_ctrl = 0b100000000000010110100;
                     break;
                 case 0x0f|0x40:
-                    if (chip->tm_w1)
+                    if ((chip->ad_mem_data_l4[0] & 128) == 0)
                         chip->ad_code_ctrl = 0b000000000000000010000;
                     break;
                 case 0x10|0x40:
-                    if (chip->tm_w1)
+                    if ((chip->ad_mem_data_l4[0] & 128) == 0)
                         chip->ad_code_ctrl = 0b000000000000000010000;
                     break;
                 case 0x11|0x40:
@@ -3506,11 +3640,11 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
                     chip->ad_code_ctrl = 0000000000000010010000;
                     break;
                 case 0x13|0x40:
-                    if (chip->tm_w1)
+                    if ((chip->ad_mem_data_l4[0] & 128) == 0)
                         chip->ad_code_ctrl = 0b000000000000000010000;
                     break;
                 case 0x14|0x40:
-                    if (chip->tm_w1)
+                    if ((chip->ad_mem_data_l4[0] & 128) == 0)
                         chip->ad_code_ctrl = 0b000000000000000010000;
                     break;
                 case 0x18|0x40:
