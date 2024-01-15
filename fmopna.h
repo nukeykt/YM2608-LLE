@@ -13,6 +13,8 @@ typedef struct {
     int gpio_b;
     int test; // set to 1
     int dt0;
+    int ad;
+    int da;
 } fmopna_input_t;
 
 typedef struct {
@@ -623,6 +625,25 @@ typedef struct {
     int ad_code_reg_id;
     int ad_dsp_regs[8];
     int ad_dsp_regs_o;
+    int ad_ad_cnt1[2];
+    int ad_ad_cmp_i;
+    int ad_ad_shift;
+    int ad_ad_w53[2];
+    int ad_ad_w55;
+    int ad_ad_w55_l;
+    int ad_ad_w56;
+    int ad_ad_buf;
+    int ad_set_eos;
+    int ad_ad_input;
+    int ad_ad_cnt2[2];
+    int ad_ad_w57[3];
+    int ad_ad_w58[3]; // sh2
+    int ad_ad_w60;
+    int ad_ad_w61[2]; // opo
+    int ad_ad_w62[2];
+    int ad_ad_w65_l;
+    int ad_ad_w66[2];
+    int ad_ad_w68;
 
     int tm_w1;
     int tm_w2;

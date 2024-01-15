@@ -2590,20 +2590,6 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
             }
         }
 
-        if (chip->read3)
-        {
-            if (chip->ad_is8)
-            {
-                chip->data_bus1 &= ~255;
-                chip->data_bus1 |= chip->tm_w1 & 255;
-            }
-            if (chip->ad_isf)
-            {
-                chip->data_bus1 &= ~255;
-                chip->data_bus1 |= chip->tm_w1 & 255;
-            }
-        }
-
         int reset = chip->ad_reg_reset || chip->ic;
 
         int mode1 = chip->ad_reg_memdata && chip->ad_reg_rec && !chip->ad_start_l[2]
@@ -3581,7 +3567,7 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
                 case 0x31:
                     if (chip->ad_w12[1] & 1)
                         next_ptr = 0x3f;
-                    if (chip->tm_w1)
+                    if (chip->ad_ad_w56)
                     {
                         next_ptr |= 1;
                         chip->ad_code_ctrl = 0b000010010000100001000;
@@ -3816,6 +3802,9 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
         if (chip->ad_dsp_read_res[1])
             chip->ad_dsp_bus = (chip->ad_dsp_alu_res >> 8) & 255;
 
+        if ((chip->ad_code_ctrl_l & 0x2000) != 0)
+            chip->ad_dsp_bus = chip->ad_ad_buf;
+
         if (chip->cclk1)
         {
             chip->ad_dsp_delta_sel[0] = chip->ad_dsp_ctrl == 1;
@@ -3998,6 +3987,126 @@ chip->ssg_noise_step = chip->ssg_noise_of || chip->ssg_test;
                 chip->ad_dsp_bus = chip->ad_dsp_regs_o;
             }
         }
+
+        chip->ad_ad_cmp_i = chip->tm_w1;
+
+        int w54 = (chip->ad_ad_shift & 1) == 0 && !chip->ad_ad_w53[1];
+
+        int w64 = w54 ? (chip->ad_ad_w65_l ^ 127) : chip->ad_ad_w65_l;
+        int w63 = (w64 + (w54 && chip->ad_ad_w55)) & 127;
+
+        if (chip->cclk1)
+        {
+            if (chip->tm_w1)
+                chip->ad_ad_cnt1[0] = 0;
+            else
+            {
+                int inc = chip->ad_ad_w57[2];
+                chip->ad_ad_cnt1[0] = (chip->ad_ad_cnt1[1] + inc) & 15;
+            }
+
+            chip->ad_ad_w53[0] = chip->ad_ad_w57[2]
+                ? !(w54 || ((chip->ad_ad_shift & 1) != 0 && !chip->ad_ad_cmp_i))
+                : chip->ad_ad_w53[1];
+
+            chip->ad_ad_w55_l = chip->ad_ad_w55;
+
+            int rst = chip->ad_ad_w57[2] || chip->tm_w2;
+
+            if (rst)
+                chip->ad_ad_cnt2[0] = 0;
+            else
+            {
+                int inc = !chip->ad_ad_w55;
+                chip->ad_ad_cnt2[0] = (chip->ad_ad_cnt2[1] + inc) & 31;
+            }
+
+            chip->ad_ad_w62[0] = rst;
+
+            chip->ad_ad_w57[1] = chip->ad_ad_w57[0];
+            chip->ad_ad_w58[1] = chip->ad_ad_w58[0];
+
+            chip->ad_ad_w61[0] = chip->ad_ad_w61[1] >> 1;
+            if (chip->ad_ad_w62[1])
+            {
+                chip->ad_ad_w61[0] |= w63;
+                if (!w54)
+                    chip->ad_ad_w61[0] |= 128;
+            }
+
+            int w59 = w54 ^ chip->ad_ad_w60;
+
+            chip->ad_ad_w66[0] = chip->ad_ad_w57[2] ? (w59 ? chip->ad_ad_w65_l : chip->ad_ad_w68)
+                : chip->ad_ad_w66[1];
+        }
+        if (chip->cclk2)
+        {
+            int cnt1 = chip->ad_ad_cnt1[0];
+            if (chip->ic)
+                cnt1 |= 8;
+
+            int shift = 0;
+            int shift2 = 0;
+            if ((cnt1 & 8) == 0)
+            {
+                shift = 1 << (cnt1 & 7);
+                shift2 = 128 >> (cnt1 & 7);
+            }
+            chip->ad_ad_shift = shift;
+
+            chip->ad_ad_cnt1[1] = cnt1;
+
+            chip->ad_ad_w53[1] = chip->ad_ad_w53[0];
+
+            chip->ad_ad_w55 = (cnt1 & 8) == 0;
+
+            chip->ad_ad_cnt2[1] = chip->ad_ad_cnt2[0];
+
+            chip->ad_ad_w57[0] = chip->ad_ad_cnt2[0] == 23;
+            chip->ad_ad_w57[2] = chip->ad_ad_w57[1];
+
+            chip->ad_ad_w58[0] = (chip->ad_ad_cnt2[0] & 24) == 0;
+            chip->ad_ad_w58[2] = chip->ad_ad_w58[1];
+
+            chip->ad_ad_w61[1] = chip->ad_ad_w61[0];
+
+            chip->ad_ad_w62[1] = chip->ad_ad_w62[0];
+
+            int w67 = chip->ad_ad_w66[0];
+            if (shift & 1)
+                w67 = 0;
+
+            int sum = shift2 + w67;
+            chip->ad_ad_w65_l = sum & 127;
+
+            chip->ad_ad_w66[1] = chip->ad_ad_w66[0];
+
+            chip->ad_ad_w68 = w67;
+        }
+
+        if (chip->ad_ad_w57[2])
+            chip->ad_ad_w60 = chip->ad_ad_cmp_i;
+
+        if (!chip->ad_ad_w55)
+            chip->ad_ad_input = chip->input.ad;
+
+        chip->ad_ad_w56 = !chip->ad_ad_w55 && chip->ad_ad_w55_l;
+
+        if (chip->ad_ad_w56)
+        {
+            chip->ad_ad_buf = chip->w63;
+            if (w54)
+                chip->ad_ad_buf |= 128;
+        }
+
+        if (chip->ad_isf && chip->read3)
+        {
+            chip->data_bus1 &= ~255;
+            chip->data_bus1 |= chip->ad_ad_buf & 255;
+        }
+
+
+        chip->ad_set_eos = chip->ad_w13 || (chip->ad_ad_w56 && chip->ad_sample_l[2]);
 
 
         if (w31 && (chip->ad_dsp_w31_l[0] & 1) == 0)
