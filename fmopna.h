@@ -602,6 +602,27 @@ typedef struct {
     int ad_dsp_w45;
     int ad_dsp_w46[2];
     int ad_output;
+    int ad_dsp_cnt2[2];
+    int ad_dsp_ctrl10_l;
+    int ad_dsp_load_alu1[2];
+    int ad_dsp_load_alu2[2];
+    int ad_dsp_alu_in1;
+    int ad_dsp_alu_in2;
+    int ad_dsp_load_res[2];
+    int ad_dsp_alu_res;
+    int ad_dsp_alu_shift;
+    int ad_dsp_alu_mask[2];
+    int ad_dsp_alu_neg[2];
+    int ad_dsp_carry_mode[2];
+    int ad_dsp_alu_of;
+    int ad_dsp_read_res[2];
+    int ad_dsp_enc_bit;
+    int ad_code_sync[3];
+    int ad_dsp_enc_bit_l[2];
+    int ad_dsp_w52[2];
+    int ad_code_reg_id;
+    int ad_dsp_regs[8];
+    int ad_dsp_regs_o;
 
     int tm_w1;
     int tm_w2;
