@@ -336,6 +336,7 @@ typedef struct {
     int eg_out;
     int eg_dbg_sync;
     int eg_debug[2];
+    int eg_debug_inc[2];
 
     int op_phase1;
     int op_phase2;
@@ -366,7 +367,6 @@ typedef struct {
     int op_mod_sum;
     int op_do_fb;
     int op_fb;
-
 
     int ssg_prescaler1[2];
     int ssg_prescaler2[2];
@@ -471,8 +471,12 @@ typedef struct {
     int rss_dbg_load;
     int rss_dbg_data;
 
+    int rss_pan[3];
+
     int write2;
     int write3;
+    int read0;
+    int read2;
     int read3;
 
     int ad_is0;
@@ -644,6 +648,57 @@ typedef struct {
     int ad_ad_w65_l;
     int ad_ad_w66[2];
     int ad_ad_w68;
+    int ad_ad_cnt3[2];
+    int ad_ad_cnt3_load;
+    int ad_ad_cnt3_load_val;
+    int ad_ad_cnt3_of[2];
+    int ad_ad_cnt3_en[2];
+    int ad_dsp_vol_o[2];
+    int ad_dsp_sregs2[2];
+    int ad_dsp_w69[2];
+    int ad_da_data;
+    int ad_ad_quiet;
+
+    int ac_da_shift[2];
+    int ac_da_sync;
+    int ac_da_w70[2];
+    int ac_da_set[2];
+    int ac_fm_output;
+    int ac_fm_output_en;
+    int ac_fm_pan;
+    int ac_fm_accm1[2];
+    int ac_da_sync2;
+    int ac_ad_output;
+    int ac_da_sync3[2];
+    int ac_fm_accm2[2];
+    int ac_rss_sum_l;
+    int ac_rss_sum_r;
+    int ac_rss_accm1[2];
+    int ac_rss_accm2[2];
+    int ac_rss_load;
+    int ac_shifter[2];
+    int ac_shifter_load_l;
+    int ac_shifter_load_r;
+    int ac_shifter_bit;
+    int ac_shifter_top;
+    int ac_opo;
+
+    int busy_cnt[2];
+    int busy_cnt_en[2];
+    int status_timer_a;
+    int status_timer_b;
+    int status_eos;
+    int status_brdy;
+    int status_zero;
+    int eos_flag;
+    int brdy_flag;
+    int zero_flag;
+    int zero_set;
+    int o_irq_pull;
+    int eos_l[2];
+    int eos_repeat;
+
+    int eg_dbg;
 
     int tm_w1;
     int tm_w2;
