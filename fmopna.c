@@ -61,6 +61,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
     {
         int prescaler_of = 0;
         int dclk = 1;
+#ifndef FMOPNA_YM2612
         switch (chip->prescaler_sel[1])
         {
             case 2:
@@ -77,6 +78,9 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
                 break;
 
         }
+#else
+        prescaler_of = (chip->prescaler_latch[1] & 0x1f) == 0;
+#endif
         chip->ic_latch1[0] = chip->ic;
 
         chip->ic_latch2[0] = (chip->ic_latch2[1] << 1) | chip->ic_latch1[1];
@@ -85,6 +89,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
         chip->prescaler_latch[0] = chip->prescaler_latch[1] << 1;
         chip->prescaler_latch[0] |= !chip->ic_check1 && prescaler_of;
 
+#ifndef FMOPNA_YM2612
         chip->pssel_l[0][0] = (chip->prescaler_latch[1] & 0x861) != 0;
         chip->pssel_l[1][0] = (chip->prescaler_latch[1] & 0x30c) != 0;
         chip->pssel_l[2][0] = (chip->prescaler_latch[1] & 0x12) != 0;
@@ -104,24 +109,37 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
         chip->pssel_l[14][0] = (chip->prescaler_latch[1] & 0x555) != 0;
 
         chip->dclk = dclk;
+#else
+        chip->pssel_l[0][0] = (chip->prescaler_latch[1] & 0x21) != 0;
+        chip->pssel_l[1][0] = (chip->prescaler_latch[1] & 0xc) != 0;
+#endif
 
     }
     if (chip->mclk2)
     {
         chip->ic_latch1[1] = chip->ic_latch1[0];
         chip->ic_latch2[1] = chip->ic_latch2[0];
-
-        chip->ic_check1 = chip->ic_latch1[1] && (chip->ic_latch2[1] & 0x20000) == 0;
-
         chip->ic_latch3[1] = chip->ic_latch3[0];
 
+#ifndef FMOPNA_YM2612
+        chip->ic_check1 = chip->ic_latch1[1] && (chip->ic_latch2[1] & 0x20000) == 0;
         chip->ic_check2 = (chip->ic_latch3[1] & 4) != 0;
+#else
+        chip->ic_check1 = chip->ic_latch1[1] && (chip->ic_latch2[1] & 0x800) == 0;
+#endif
         chip->ic_check3 = (chip->ic_latch3[1] & 8) != 0;
+
+
 
         chip->prescaler_latch[1] = chip->prescaler_latch[0];
 
+#ifndef FMOPNA_YM2612
         for (i = 0; i < 15; i++)
             chip->pssel_l[i][1] = chip->pssel_l[i][0];
+#else
+        chip->pssel_l[0][1] = chip->pssel_l[0][0];
+        chip->pssel_l[1][1] = chip->pssel_l[1][0];
+#endif
     }
 
     if (chip->clk1)
@@ -134,6 +152,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
     }
 
     {
+#ifndef FMOPNA_YM2612
         int clk1 = 1;
         int clk2 = 1;
         int aclk1 = 1;
@@ -180,27 +199,36 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
 
         chip->cclk1 = !chip->pssel_l[14][1];
         chip->cclk2 = chip->pssel_l[14][1];
+#else
+        chip->clk1 = chip->pssel_l[0][1];
+        chip->clk2 = chip->pssel_l[1][1];
+#endif
     }
+
+    //if (clk)
+    //    return;
 
     {
         int read = !chip->ic && !chip->input.rd && !chip->input.cs;
         chip->read0 = !chip->ic && !chip->input.rd && !chip->input.cs && !chip->input.a1 && !chip->input.a0;
+        int write = !chip->input.wr && !chip->input.cs;
+        int writeaddr = chip->ic || (!chip->input.wr && !chip->input.cs && !chip->input.a0);
+        int writedata = !chip->ic && !chip->input.wr && !chip->input.cs && chip->input.a0;
+#ifndef FMOPNA_YM2612
         int read1 = !chip->ic && !chip->input.rd && !chip->input.cs && !chip->input.a1 && chip->input.a0;
         chip->read2 = !chip->ic && !chip->input.rd && !chip->input.cs && chip->input.a1 && !chip->input.a0;
         chip->read3 = !chip->ic && !chip->input.rd && !chip->input.cs && chip->input.a1 && chip->input.a0;
-        int write = !chip->input.wr && !chip->input.cs;
         chip->write2 = !chip->ic && !chip->input.wr && !chip->input.cs && chip->input.a1 && !chip->input.a0;
         chip->write3 = !chip->ic && !chip->input.wr && !chip->input.cs && chip->input.a1 && chip->input.a0;
-        int writeaddr = chip->ic || (!chip->input.wr && !chip->input.cs && !chip->input.a0);
-        int writedata = !chip->ic && !chip->input.wr && !chip->input.cs && chip->input.a0;
-
         chip->ssg_write0 = writeaddr && !chip->input.a1;
         chip->ssg_write1 = (writedata && !chip->input.a1) || chip->ic;
         chip->ssg_read1 = read1;
+#endif
+
 
         chip->o_data_d = !read;
 
-        if (writedata)
+        if (writeaddr)
             chip->write0_trig0 = 1;
         else if (chip->write0_l[0])
             chip->write0_trig0 = 0;
@@ -216,7 +244,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
         }
         chip->write0_en = chip->write0_l[0] && !chip->write0_l[2];
 
-        if (writeaddr)
+        if (writedata)
             chip->write1_trig0 = 1;
         else if (chip->write1_l[0])
             chip->write1_trig0 = 0;
@@ -232,6 +260,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
         }
         chip->write1_en = chip->write1_l[0] && !chip->write1_l[2];
 
+#ifndef FMOPNA_YM2612
         if (writeaddr)
             chip->write2_trig0 = 1;
         else if (chip->write2_l[0])
@@ -252,13 +281,17 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             chip->write3_trig0 = 1;
         else if (chip->write3_l[0])
             chip->write3_trig0 = 0;
+#endif
 
         if (write)
             chip->data_l = (chip->input.data & 255) | (chip->input.a1 << 8);
 
+#ifndef FMOPNA_YM2612
         if (chip->ic)
             chip->data_bus2 |= 0x2f;
-        else if (!read && !chip->ic)
+        else
+#endif
+        if (!read && !chip->ic)
             chip->data_bus2 = chip->data_l ^ 0x1ff;
 
         if (chip->ic_latch_fm[1])
@@ -269,18 +302,22 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
         {
             chip->data_bus1 = chip->data_l;
         }
+#ifndef FMOPNA_YM2612
         else if (read1 && chip->addr_ff[1])
         {
             chip->data_bus1 &= ~255;
             chip->data_bus1 |= 1;
         }
+#endif
 
 #define ADDRESS_MATCH(x) ((chip->data_bus2 & x) == 0 && (chip->data_bus1 & (x^511)) == 0)
+
+#ifndef FMOPNA_YM2612
         if (chip->mclk1)
         {
-            int addr2d = chip->write2_en && ADDRESS_MATCH(0x2d);
-            int addr2e = chip->write2_en && ADDRESS_MATCH(0x2e);
-            int addr2f = chip->write2_en && ADDRESS_MATCH(0x2f);
+            int addr2d = chip->write1_en && ADDRESS_MATCH(0x2d);
+            int addr2e = chip->write1_en && ADDRESS_MATCH(0x2e);
+            int addr2f = chip->write1_en && ADDRESS_MATCH(0x2f);
             chip->prescaler_sel[0] = chip->prescaler_sel[1];
             if (addr2f)
                 chip->prescaler_sel[0] = 0;
@@ -295,6 +332,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
         {
             chip->prescaler_sel[1] = chip->prescaler_sel[0];
         }
+#endif
 
         if (chip->clk1)
         {
@@ -318,9 +356,21 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
 
             chip->write_fm_data[0] = (chip->write_fm_address[1] && chip->write1_en) || (chip->write_fm_data[1] && !chip->write0_en);
 
+#ifndef FMOPNA_YM2612
             chip->addr_10[0] = chip->write0_en ? ADDRESS_MATCH(0x10) : chip->addr_10[1];
             chip->addr_10h[0] = chip->write0_en ? ADDRESS_MATCH(0x110) : chip->addr_10h[1];
             chip->addr_12[0] = chip->write0_en ? ADDRESS_MATCH(0x12) : chip->addr_12[1];
+            chip->addr_29[0] = chip->write0_en ? ADDRESS_MATCH(0x29) : chip->addr_29[1];
+            chip->addr_ff[0] = chip->write0_en ? ADDRESS_MATCH(0xff) : chip->addr_ff[1];
+            int write10 = chip->addr_10h[1] && (chip->data_bus1 & 0x100) != 0 && chip->write1_en;
+            int irq_rst = write10 && (chip->data_bus2 & 0x80) == 0;
+
+#endif
+#ifdef FMOPNA_YM2612
+            chip->addr_2a[0] = chip->write0_en ? ADDRESS_MATCH(0x2a) : chip->addr_2a[1];
+            chip->addr_2b[0] = chip->write0_en ? ADDRESS_MATCH(0x2b) : chip->addr_2b[1];
+            chip->addr_2c[0] = chip->write0_en ? ADDRESS_MATCH(0x2c) : chip->addr_2c[1];
+#endif
             chip->addr_21[0] = chip->write0_en ? ADDRESS_MATCH(0x21) : chip->addr_21[1];
             chip->addr_22[0] = chip->write0_en ? ADDRESS_MATCH(0x22) : chip->addr_22[1];
             chip->addr_24[0] = chip->write0_en ? ADDRESS_MATCH(0x24) : chip->addr_24[1];
@@ -328,16 +378,9 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             chip->addr_26[0] = chip->write0_en ? ADDRESS_MATCH(0x26) : chip->addr_26[1];
             chip->addr_27[0] = chip->write0_en ? ADDRESS_MATCH(0x27) : chip->addr_27[1];
             chip->addr_28[0] = chip->write0_en ? ADDRESS_MATCH(0x28) : chip->addr_28[1];
-            chip->addr_29[0] = chip->write0_en ? ADDRESS_MATCH(0x29) : chip->addr_29[1];
-            chip->addr_ff[0] = chip->write0_en ? ADDRESS_MATCH(0xff) : chip->addr_ff[1];
-
-
-            int write10 = chip->addr_10h[1] && (chip->data_bus1 & 0x100) != 0 && chip->write1_en;
-            int irq_rst = write10 && (chip->data_bus2 & 0x80) == 0;
 
             if (chip->ic)
             {
-                chip->reg_test_12[0] = 0;
                 chip->reg_test_21[0] = 0;
                 chip->reg_lfo[0] = 0;
                 chip->reg_timer_a[0] = 0;
@@ -351,12 +394,21 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
                 chip->reg_timer_b_reset[0] = 0;
                 chip->reg_kon_operator[0] = 0;
                 chip->reg_kon_channel[0] = 0;
+#ifndef FMOPNA_YM2612
+                chip->reg_test_12[0] = 0;
                 chip->reg_sch[0] = 0;
                 chip->reg_irq[0] = 31;
                 chip->reg_mask[0] = 28;
+#endif
+#ifdef FMOPNA_YM2612
+                chip->reg_dac_en[0] = 0;
+                chip->reg_dac_data[0] = 0x80;
+                chip->reg_test_2c[0] = 0;
+#endif
             }
             else
             {
+#ifndef FMOPNA_YM2612
                 int write10r = write10 && (chip->data_bus2 & 0x80) != 0;
                 if (write10r)
                 {
@@ -375,6 +427,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
                 {
                     chip->reg_test_12[0] = chip->reg_test_12[1];
                 }
+#endif
                 if (chip->addr_21[1] && (chip->data_bus1 & 0x100) == 0 && chip->write1_en)
                 {
                     chip->reg_test_21[0] = chip->data_bus1 & 255;
@@ -446,6 +499,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
                     chip->reg_kon_operator[0] = chip->reg_kon_operator[1];
                     chip->reg_kon_channel[0] = chip->reg_kon_channel[1];
                 }
+#ifndef FMOPNA_YM2612
                 if (chip->addr_29[1] && (chip->data_bus1 & 0x100) == 0 && chip->write1_en)
                 {
                     chip->reg_sch[0] = (chip->data_bus1 >> 7) & 1;
@@ -456,6 +510,33 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
                     chip->reg_sch[0] = chip->reg_sch[1];
                     chip->reg_irq[0] = chip->reg_irq[1];
                 }
+#endif
+#ifdef FMOPNA_YM2612
+                if (chip->addr_2a[1] && (chip->data_bus1 & 0x100) == 0 && chip->write1_en)
+                {
+                    chip->reg_dac_data[0] = chip->data_bus1 & 255;
+                }
+                else
+                {
+                    chip->reg_dac_data[0] = chip->reg_dac_data[1];
+                }
+                if (chip->addr_2b[1] && (chip->data_bus1 & 0x100) == 0 && chip->write1_en)
+                {
+                    chip->reg_dac_en[0] = (chip->data_bus1 & 128) != 0;
+                }
+                else
+                {
+                    chip->reg_dac_en[0] = chip->reg_dac_en[1];
+                }
+                if (chip->addr_2c[1] && (chip->data_bus1 & 0x100) == 0 && chip->write1_en)
+                {
+                    chip->reg_test_2c[0] = chip->data_bus1 & 0xf8;
+                }
+                else
+                {
+                    chip->reg_test_2c[0] = chip->reg_test_2c[1];
+                }
+#endif
             }
 
             int rst1 = chip->reg_cnt_sync || chip->ic;
@@ -464,8 +545,10 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             chip->reg_cnt1[0] = (rst1 || of) ? 0 : ((chip->reg_cnt1[1] + 1) & 3);
             chip->reg_cnt2[0] = rst1 ? 0 : ((chip->reg_cnt2[1] + of) & 3);
 
+#ifndef FMOPNA_YM2612
             int rst2 = chip->reg_cnt_sync || chip->reg_cnt_rss_of;
             chip->reg_cnt_rss[0] = rst2 ? 0 : ((chip->reg_cnt_rss[1] + 1) & 15);
+#endif
 
             int of2 = (chip->reg_key_cnt2[1] & 2) != 0;
             chip->reg_key_cnt1[0] = (rst1 || of2) ? 0 : ((chip->reg_key_cnt1[1] + 1) & 3);
@@ -503,14 +586,21 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             chip->timer_a_reg_load_l[0] = chip->timer_a_reg_load;
 
             int rst_a = chip->reg_timer_a_reset[1] || chip->ic;
-            int rst_a2 = rst_a || irq_rst || (chip->reg_mask[1] & 1) != 0;
+            int rst_a2 = rst_a
+#ifndef FMOPNA_YM2612
+                || irq_rst || (chip->reg_mask[1] & 1) != 0
+#endif
+                ;
 
             if (rst_a2)
                 chip->timer_a_status[0] = 0;
             else
                 chip->timer_a_status[0] = chip->timer_a_status[1];
 
-            chip->timer_a_status[0] |= !rst_a && (chip->reg_mask[1] & 1) == 0
+            chip->timer_a_status[0] |= !rst_a
+#ifndef FMOPNA_YM2612
+                && (chip->reg_mask[1] & 1) == 0
+#endif
                 && chip->reg_timer_a_enable[1] && chip->timer_a_of[1];
 
             int subcnt = chip->timer_b_subcnt[1] + chip->reg_sync_timer;
@@ -526,21 +616,30 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             chip->timer_b_reg_load_l[0] = chip->timer_b_reg_load;
 
             int rst_b = chip->reg_timer_b_reset[1] || chip->ic;
-            int rst_b2 = rst_b || irq_rst || (chip->reg_mask[1] & 2) != 0;
+            int rst_b2 = rst_b
+#ifndef FMOPNA_YM2612
+                || irq_rst || (chip->reg_mask[1] & 2) != 0
+#endif
+                ;
 
             if (rst_b2)
                 chip->timer_b_status[0] = 0;
             else
                 chip->timer_b_status[0] = chip->timer_b_status[1];
 
-            chip->timer_b_status[0] |= !rst_b && (chip->reg_mask[1] & 2) == 0
+            chip->timer_b_status[0] |= !rst_b
+#ifndef FMOPNA_YM2612
+                && (chip->reg_mask[1] & 2) == 0
+#endif
                 && chip->reg_timer_b_enable[1] && chip->timer_b_of[1];
 
             memcpy(&chip->reg_freq[0][1], &chip->reg_freq[1][0], 5 * sizeof(unsigned short));
             memcpy(&chip->reg_freq_3ch[0][1], &chip->reg_freq_3ch[1][0], 5 * sizeof(unsigned short));
             memcpy(&chip->reg_connect_fb[0][1], &chip->reg_connect_fb[1][0], 5 * sizeof(unsigned char));
             memcpy(&chip->reg_b4[0][1], &chip->reg_b4[1][0], 5 * sizeof(unsigned char));
+#ifndef FMOPNA_YM2612
             memcpy(&chip->reg_rss[0][1], &chip->reg_rss[1][0], 5 * sizeof(unsigned char));
+#endif
             memcpy(&chip->op_multi_dt[0][1][0], &chip->op_multi_dt[1][0][0], 11 * 2 * sizeof(unsigned char));
             memcpy(&chip->op_tl[0][1][0], &chip->op_tl[1][0][0], 11 * 2 * sizeof(unsigned char));
             memcpy(&chip->op_ar_ks[0][1][0], &chip->op_ar_ks[1][0][0], 11 * 2 * sizeof(unsigned char));
@@ -557,7 +656,9 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
                 chip->reg_freq_3ch[0][0] = 0;
                 chip->reg_connect_fb[0][0] = 0;
                 chip->reg_b4[0][0] = 0xc0;
+#ifndef FMOPNA_YM2612
                 chip->reg_rss[0][0] = 0;
+#endif
 
                 chip->op_multi_dt[0][0][0] = 0;
                 chip->op_multi_dt[0][0][1] = 0;
@@ -582,7 +683,9 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
                 chip->reg_freq_3ch[0][0] = chip->fm_isa8 ? (chip->fm_data[1] & 0xff) | (chip->reg_ac[1] << 8) : chip->reg_freq_3ch[1][5];
                 chip->reg_connect_fb[0][0] = chip->fm_isb0 ? (chip->fm_data[1] & 0x3f) : chip->reg_connect_fb[1][5];
                 chip->reg_b4[0][0] = chip->fm_isb4 ? (chip->fm_data[1] & 0xf7) : chip->reg_b4[1][5];
+#ifndef FMOPNA_YM2612
                 chip->reg_rss[0][0] = chip->rss_18 ? (chip->fm_data[1] & 0xdf) : chip->reg_rss[1][5];
+#endif
 
                 int bank = (chip->fm_address[1] & 8) != 0;
 
@@ -645,9 +748,6 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             chip->fm_data[1] = chip->fm_data[0];
             chip->write_fm_data[1] = chip->write_fm_data[0];
 
-            chip->addr_10[1] = chip->addr_10[0];
-            chip->addr_10h[1] = chip->addr_10h[0];
-            chip->addr_12[1] = chip->addr_12[0];
             chip->addr_21[1] = chip->addr_21[0];
             chip->addr_22[1] = chip->addr_22[0];
             chip->addr_24[1] = chip->addr_24[0];
@@ -655,10 +755,30 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             chip->addr_26[1] = chip->addr_26[0];
             chip->addr_27[1] = chip->addr_27[0];
             chip->addr_28[1] = chip->addr_28[0];
+#ifndef FMOPNA_YM2612
+            chip->addr_10[1] = chip->addr_10[0];
+            chip->addr_10h[1] = chip->addr_10h[0];
+            chip->addr_12[1] = chip->addr_12[0];
             chip->addr_29[1] = chip->addr_29[0];
             chip->addr_ff[1] = chip->addr_ff[0];
+#endif
+#ifdef FMOPNA_YM2612
+            chip->addr_2a[1] = chip->addr_2a[0];
+            chip->addr_2b[1] = chip->addr_2b[0];
+            chip->addr_2c[1] = chip->addr_2c[0];
+#endif
 
+#ifndef FMOPNA_YM2612
             chip->reg_mask[1] = chip->reg_mask[0];
+            chip->reg_sch[1] = chip->reg_sch[0];
+            chip->reg_irq[1] = chip->reg_irq[0];
+            chip->reg_test_12[1] = chip->reg_test_12[0];
+#endif
+#ifdef FMOPNA_YM2612
+            chip->reg_dac_en[1] = chip->reg_dac_en[0];
+            chip->reg_dac_data[1] = chip->reg_dac_data[0];
+            chip->reg_test_2c[1] = chip->reg_test_2c[0];
+#endif
             chip->reg_test_21[1] = chip->reg_test_21[0];
             chip->reg_lfo[1] = chip->reg_lfo[0];
             chip->reg_timer_a[1] = chip->reg_timer_a[0];
@@ -672,8 +792,6 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             chip->reg_timer_b_reset[1] = chip->reg_timer_b_reset[0];
             chip->reg_kon_operator[1] = chip->reg_kon_operator[0];
             chip->reg_kon_channel[1] = chip->reg_kon_channel[0];
-            chip->reg_sch[1] = chip->reg_sch[0];
-            chip->reg_irq[1] = chip->reg_irq[0];
 
             int op_match = chip->write_fm_data[0] && (chip->reg_cnt1[0] == (chip->fm_address[0] & 3))
                 && (chip->reg_cnt2[0] & 1) == ((chip->fm_address[0] >> 8) & 1)
@@ -699,6 +817,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             chip->reg_cnt2[1] = chip->reg_cnt2[0];
             chip->reg_cnt_sync = chip->fsm_sel23[1];
 
+#ifndef FMOPNA_YM2612
             chip->reg_cnt_rss[1] = chip->reg_cnt_rss[0];
 
             chip->reg_cnt_rss_of = (chip->reg_cnt_rss[0] & 11) == 11;
@@ -706,9 +825,14 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             chip->rss_18 = chip->write_fm_data[0]
                 && chip->reg_cnt_rss[0] == (chip->fm_address[0] & 7) && (chip->fm_address[0] & 6) != 6
                 && (chip->fm_address[0] & 0x1f8) == 0x18;
+#endif
 
             chip->reg_kon_match = chip->reg_key_cnt1[0] == (chip->reg_kon_channel[0] & 3)
-                && chip->reg_key_cnt2[0] == (((chip->reg_kon_channel[0] >> 2) & 1) && chip->reg_sch[0]);
+                && chip->reg_key_cnt2[0] == (((chip->reg_kon_channel[0] >> 2) & 1)
+#ifndef FMOPNA_YM2612
+                    && chip->reg_sch[0]
+#endif
+                    );
 
             chip->reg_kon[0][1] = chip->reg_kon[0][0];
             chip->reg_kon[1][1] = chip->reg_kon[1][0];
@@ -759,14 +883,18 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
 
             chip->timer_b_status[1] = chip->timer_b_status[0];
 
+#ifndef FMOPNA_YM2612
             chip->irq_eos_l = chip->eos_repeat;
+#endif
 
 
             memcpy(&chip->reg_freq[1][0], &chip->reg_freq[0][0], 6 * sizeof(unsigned short));
             memcpy(&chip->reg_freq_3ch[1][0], &chip->reg_freq_3ch[0][0], 6 * sizeof(unsigned short));
             memcpy(&chip->reg_connect_fb[1][0], &chip->reg_connect_fb[0][0], 6 * sizeof(unsigned char));
             memcpy(&chip->reg_b4[1][0], &chip->reg_b4[0][0], 6 * sizeof(unsigned char));
+#ifndef FMOPNA_YM2612
             memcpy(&chip->reg_rss[1][0], &chip->reg_rss[0][0], 6 * sizeof(unsigned char));
+#endif
             memcpy(&chip->op_multi_dt[1][0][0], &chip->op_multi_dt[0][0][0], 12 * 2 * sizeof(unsigned char));
             memcpy(&chip->op_tl[1][0][0], &chip->op_tl[0][0][0], 12 * 2 * sizeof(unsigned char));
             memcpy(&chip->op_ar_ks[1][0][0], &chip->op_ar_ks[0][0][0], 12 * 2 * sizeof(unsigned char));
@@ -789,6 +917,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             chip->kcode[3] = chip->kcode[2];
         }
 
+#ifndef FMOPNA_YM2612
         {
             int write10 = chip->addr_10h[1] && (chip->data_bus1 & 0x100) != 0 && chip->write1_en;
             int irq_rst = write10 && (chip->data_bus2 & 0x80) == 0;
@@ -796,6 +925,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             chip->irq_mask_brdy = (chip->reg_mask[1] & 8) != 0 || irq_rst;
             chip->irq_mask_zero = (chip->reg_mask[1] & 16) != 0 || irq_rst;
         }
+#endif
 
     }
 
@@ -824,13 +954,26 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             chip->fsm_out[12] = (fsm_cnt & 30) == 30;
             chip->fsm_out[13] = fsm_cnt == 0;
             chip->fsm_out[14] = fsm_cnt == 1;
+#ifndef FMOPNA_YM2612
             chip->fsm_out[15] = fsm_cnt == 13;
+#endif
             chip->fsm_out[16] = fsm_cnt == 29;
             chip->fsm_out[17] = (fsm_cnt & 7) == 1;
             chip->fsm_out[18] = (fsm_cnt & 28) == 4;
             chip->fsm_out[19] = fsm_cnt == 8;
+#ifndef FMOPNA_YM2612
             chip->fsm_out[20] = (fsm_cnt & 28) == 20;
             chip->fsm_out[21] = fsm_cnt == 24;
+#endif
+#ifdef FMOPNA_YM2612
+            chip->fsm_out[20] = (fsm_cnt & 15) == 14;
+            chip->fsm_out[21] = (fsm_cnt & 15) == 4;
+            chip->fsm_out[22] = (fsm_cnt & 15) == 9;
+            chip->fsm_out[23] = fsm_cnt == 14;
+            chip->fsm_out[24] = (fsm_cnt & 24) == 16;
+            chip->fsm_out[25] = (fsm_cnt & 28) == 24;
+            chip->fsm_out[26] = (fsm_cnt & 30) == 28;
+#endif
 
             chip->alg_mod_op1_0_l = 0;
             chip->alg_mod_op1_1_l = 0;
@@ -883,13 +1026,20 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             chip->fsm_sel0[1] = chip->fsm_sel0[0];
             chip->fsm_sel1[1] = chip->fsm_sel1[0];
             chip->fsm_sel2[1] = chip->fsm_sel2[0];
-            chip->fsm_sel11[1] = chip->fsm_sel11[0];
             chip->fsm_sel23[1] = chip->fsm_sel23[0];
             chip->fsm_sel_ch3[1] = chip->fsm_sel_ch3[0];
+#ifndef FMOPNA_YM2612
+            chip->fsm_sel11[1] = chip->fsm_sel11[0];
             chip->fsm_sh1[1] = chip->fsm_sh1[0];
             chip->fsm_sh2[1] = chip->fsm_sh2[0];
 
             chip->fsm_rss2 = !chip->fsm_out[16] && !chip->fsm_sel23[1];
+#endif
+#ifdef FMOPNA_YM2612
+            chip->fsm_dac_ch6[1] = chip->fsm_dac_ch6[0];
+            chip->fsm_dac_load[1] = chip->fsm_dac_load[0];
+            chip->fsm_dac_out_sel[1] = chip->fsm_dac_out_sel[0];
+#endif
         }
         if (chip->clk2)
         {
@@ -908,13 +1058,20 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             chip->fsm_sel0[0] = chip->fsm_out[12];
             chip->fsm_sel1[0] = chip->fsm_out[13];
             chip->fsm_sel2[0] = chip->fsm_out[14];
-            chip->fsm_sel11[0] = chip->fsm_out[15];
             chip->fsm_sel23[0] = chip->fsm_out[16];
             chip->fsm_sel_ch3[0] = chip->fsm_out[17];
+#ifndef FMOPNA_YM2612
+            chip->fsm_sel11[0] = chip->fsm_out[15];
             chip->fsm_sh1[0] = chip->fsm_out[18] || chip->fsm_out[19];
             chip->fsm_sh2[0] = chip->fsm_out[20] || chip->fsm_out[21];
 
             chip->fsm_rss = (chip->fsm_cnt2[0] & 2) != 0;
+#endif
+#ifdef FMOPNA_YM2612
+            chip->fsm_dac_ch6[0] = chip->fsm_out[18] || chip->fsm_out[19];
+            chip->fsm_dac_load[0] = chip->fsm_out[20] || chip->fsm_out[21] || chip->fsm_out[22];
+            chip->fsm_dac_out_sel[0] = chip->fsm_out[23] || chip->fsm_out[24] || chip->fsm_out[25] || chip->fsm_out[26];
+#endif
         }
     }
 
@@ -928,7 +1085,9 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
 
             int cnt = chip->lfo_cnt[1] + chip->lfo_subcnt_of;
 
+#ifndef FMOPNA_YM2612
             chip->lfo_cnt_of = (cnt & 128) != 0 && chip->lfo_mode;
+#endif
             chip->lfo_cnt[0] = chip->lfo_cnt_rst ? 0 : cnt & 127;
 
             chip->lfo_sync[1] = chip->lfo_sync[0];
@@ -999,11 +1158,17 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
 
             chip->lfo_subcnt[1] = chip->lfo_subcnt[0];
 
-            chip->lfo_mode = chip->ad_sample_l[2] || (chip->ad_reg_rec && chip->ad_start_l[1]);
             int of = (chip->lfo_subcnt[0] & lfo_cycles[chip->reg_lfo[0] & 7]) == lfo_cycles[chip->reg_lfo[0] & 7];
 
+#ifndef FMOPNA_YM2612
+            chip->lfo_mode = chip->ad_sample_l[2] || (chip->ad_reg_rec && chip->ad_start_l[1]);
             chip->lfo_subcnt_of = chip->lfo_mode ? (chip->lfo_subcnt[0] & 127) == 127 : of;
             chip->lfo_cnt_rst = chip->lfo_mode ? chip->ad_ad_quiet : (chip->reg_lfo[0] & 8) != 0;
+#endif
+#ifdef FMOPNA_YM2612
+            chip->lfo_subcnt_of = of;
+            chip->lfo_cnt_rst = (chip->reg_lfo[0] & 8) != 0;
+#endif
 
             chip->lfo_cnt[1] = chip->lfo_cnt[0];
 
@@ -1054,7 +1219,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             chip->pg_reset[1] = chip->pg_reset[0];
             chip->pg_reset[3] = chip->pg_reset[2];
 
-            memcpy(&chip->pg_phase[0][1], &chip->pg_phase[1][0], 22 * 2 * sizeof(int));
+            memcpy(&chip->pg_phase[0][1], &chip->pg_phase[1][0], 22 * sizeof(int));
 
             chip->pg_phase2[0] = chip->pg_phase[1][22];
 
@@ -1110,7 +1275,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
 
             chip->pg_reset[0] = (chip->eg_pg_reset[0] & 2) != 0;
             chip->pg_reset[2] = chip->pg_reset[1];
-            memcpy(&chip->pg_phase[1][0], &chip->pg_phase[0][0], 23 * 2 * sizeof(int));
+            memcpy(&chip->pg_phase[1][0], &chip->pg_phase[0][0], 23 * sizeof(int));
 
             chip->pg_out = chip->pg_phase[1][18] >> 10;
 
@@ -1151,7 +1316,12 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             chip->eg_timer_test = (chip->reg_test_21[1] & 32) != 0;
             chip->eg_timer_test_bit[0] = chip->input.test;
 
-            int timer_bit = chip->eg_timer_sum[1] || !chip->eg_timer_test_bit[1];
+            int timer_bit = chip->eg_timer_sum[1] ||
+                (!chip->eg_timer_test_bit[1]
+#ifdef FMOPNA_YM2612
+                    && (chip->reg_test_2c[1] & 64) != 0
+#endif
+                    );
 
             chip->eg_timer_mask[0] = timer_bit | chip->eg_timer_mask[1];
             if (chip->eg_prescaler_clock_l[1] || ((chip->eg_clock_delay[1] >> 11) & 1) != 0 || chip->eg_ic[1])
@@ -1592,8 +1762,8 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
                 0x003, 0x003, 0x003, 0x003, 0x003, 0x003, 0x003, 0x003, 0x002, 0x003, 0x003, 0x003, 0x003, 0x003, 0x002, 0x003,
             };
 
-            chip->op_logsin_base = logsin[chip->op_phase_index >> 1];
-            chip->op_logsin_delta = (chip->op_phase_index & 1) != 0 ? 0 : logsin_d[chip->op_phase_index >> 1];
+            chip->op_logsin_base = logsin[(chip->op_phase_index >> 1) & 127];
+            chip->op_logsin_delta = (chip->op_phase_index & 1) != 0 ? 0 : logsin_d[(chip->op_phase_index >> 1) & 127];
 
             chip->op_eglevel = chip->eg_out;
 
@@ -1727,6 +1897,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
         }
     }
 
+#ifndef FMOPNA_YM2612
     {
         if (!chip->mclk2)
         {
@@ -4448,8 +4619,10 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
 
             int clipl = chip->ac_shifter_top == 6 || (chip->ac_shifter_top & 6) == 4;
             int cliph = chip->ac_shifter_top == 1 || (chip->ac_shifter_top & 6) == 2;
+            clipl = 0;
+            cliph = 0;
 
-            chip->ac_opo = cliph ? 1 : (clipl ? 0 : chip->ac_shifter_top);
+            chip->ac_opo = cliph ? 1 : (clipl ? 0 : chip->ac_shifter_bit);
         }
 
         if (chip->clk2)
@@ -4495,6 +4668,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             chip->o_s = chip->bclk1;
 
     }
+#endif
 
     {
         if (chip->clk1)
@@ -4509,23 +4683,27 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
 
             chip->busy_cnt_en[0] = chip->write1_en || (chip->busy_cnt_en[1] && !(of || chip->ic));
 
+#ifndef FMOPNA_YM2612
             chip->eos_l[0] = chip->eos_flag;
 
             chip->eos_repeat = chip->eos_l[1] && chip->ad_set_eos && chip->ad_reg_repeat;
+#endif
         }
         if (chip->clk2)
         {
             chip->busy_cnt[1] = chip->busy_cnt[0];
             chip->busy_cnt_en[1] = chip->busy_cnt_en[0];
 
+#ifndef FMOPNA_YM2612
             chip->zero_set = chip->lfo_cnt_of;
 
             chip->eos_l[1] = chip->eos_l[0];
-
+#endif
             chip->eg_dbg = chip->reg_test_21[0] ? (chip->eg_debug[0] & 0x200) != 0 :
                 chip->eg_debug_inc;
         }
 
+#ifndef FMOPNA_YM2612
         if (chip->irq_mask_eos)
             chip->eos_flag = 0;
         else
@@ -4541,7 +4719,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
         else
             chip->zero_flag |= chip->zero_set;
 
-        if (!chip->ssg_read1 && !chip->read3)
+        if (!chip->read0 && !chip->read2)
         {
             chip->status_timer_a = chip->timer_a_status[1];
             chip->status_timer_b = chip->timer_b_status[1];
@@ -4549,7 +4727,16 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             chip->status_brdy = chip->brdy_flag;
             chip->status_zero = chip->zero_flag;
         }
+#endif
+#ifdef FMOPNA_YM2612
+        if (!chip->read0)
+        {
+            chip->status_timer_a = chip->timer_a_status[1];
+            chip->status_timer_b = chip->timer_b_status[1];
+        }
+#endif
 
+#ifndef FMOPNA_YM2612
         chip->o_irq_pull = 0;
         if (chip->reg_irq[1] & 1)
             chip->o_irq_pull |= chip->status_timer_a;
@@ -4561,11 +4748,21 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             chip->o_irq_pull |= chip->status_brdy;
         if (chip->reg_irq[1] & 16)
             chip->o_irq_pull |= chip->status_zero;
+#endif
+#ifdef FMOPNA_YM2612
+        chip->o_irq_pull = chip->status_timer_a | chip->status_timer_b;
+#endif
 
         chip->read_bus = 0; // FIXME
+#ifndef FMOPNA_YM2612
         if (chip->ssg_read1 || chip->read3)
             chip->read_bus = chip->data_bus1 & 255;
-        if ((chip->reg_test_21[1] & 0x40) == 0 && (chip->reg_test_12[1] & 0x20) == 0)
+#endif
+        if ((chip->reg_test_21[1] & 0x40) == 0
+#ifndef FMOPNA_YM2612
+            && (chip->reg_test_12[1] & 0x20) == 0
+#endif
+            )
         {
             if (chip->read0)
             {
@@ -4576,6 +4773,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
                 if (chip->status_timer_b)
                     chip->read_bus |= 2;
             }
+#ifndef FMOPNA_YM2612
             if (chip->read2)
             {
                 if (chip->busy_cnt_en[1])
@@ -4593,7 +4791,9 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
                 if (chip->ad_rec_start_l[0])
                     chip->read_bus |= 32;
             }
+#endif
         }
+#ifndef FMOPNA_YM2612
         if ((chip->reg_test_12[0] & 0x20) != 0 && chip->read0)
         {
             if ((chip->reg_test_12[0] & 0x40) == 0)
@@ -4610,9 +4810,19 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
                 chip->read_bus = chip->rss_dbg_data & 255;
             }
         }
+#endif
         if ((chip->reg_test_21[1] & 0x40) != 0 && chip->read0)
         {
-            int testdata = chip->op_output[3] & 0x3fff;
+            int testdata = 0;
+#ifndef FMOPNA_YM2612
+            testdata = chip->op_output[3] & 0x3fff;
+#endif
+#ifdef FMOPNA_YM2612
+            if (chip->reg_test_2c[1] & 16)
+                testdata |= chip->ch_dbg[1] & 0x1ff;
+            else
+                testdata |= chip->op_output[3] & 0x3fff;
+#endif
 
             testdata |= (chip->pg_dbg[1] & 1) << 15;
             testdata |= chip->eg_dbg << 14;
@@ -4629,6 +4839,107 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
 
         chip->o_data = chip->read_bus;
     }
+#ifdef FMOPNA_YM2612
+    // YM2612 channel accumulator
+    {
+        int test_dac = (chip->reg_test_2c[1] & 32) != 0;
+        if (chip->clk1)
+        {
+            int add = (!test_dac && chip->ch_op_add) ? chip->ch_op_output : 0;
+            int load = chip->ch_accm_load || test_dac;
+            int clear = !test_dac && load;
+            int acc = clear ? 0 : chip->ch_accm[1][5];
+            int sum1 = (add + acc + test_dac) & 0x1ff;
+
+            if ((acc & 0x100) == 0 && (add & 0x100) == 0 && (sum1 & 0x100) != 0)
+                sum1 = 255;
+            else if ((acc & 0x100) != 0 && (add & 0x100) != 0 && (sum1 & 0x100) == 0)
+                sum1 = 256;
+
+            chip->ch_accm[0][0] = sum1;
+            memcpy(&chip->ch_accm[0][1], &chip->ch_accm[1][0], 5 * sizeof(short));
+            memcpy(&chip->ch_buf[0][1], &chip->ch_buf[1][0], 5 * sizeof(short));
+
+            chip->ch_buf[0][0] = load ? chip->ch_accm[1][5] : chip->ch_buf[1][5];
+
+            chip->ch_load[1] = chip->ch_load[0];
+
+            chip->ch_dbg[0] = chip->ch_output;
+        }
+        if (chip->clk2)
+        {
+            chip->ch_op_output = (chip->op_output[2] >> 5) & 0x1ff;
+            chip->ch_op_add = chip->alg_output_l;
+            chip->ch_accm_load = chip->alg_mod_op1_1_l;
+            memcpy(&chip->ch_accm[1][0], &chip->ch_accm[0][0], 6 * sizeof(short));
+            memcpy(&chip->ch_buf[1][0], &chip->ch_buf[0][0], 6 * sizeof(short));
+
+            chip->ch_load[0] = chip->fsm_dac_load[1];
+
+            chip->ch_sel = chip->fsm_dac_out_sel[1];
+
+            chip->ch_ch6 = chip->fsm_dac_ch6[1];
+
+            chip->ch_dbg[1] = chip->ch_dbg[0];
+
+            chip->o_test = chip->fsm_sel23[1];
+        }
+
+        {
+            if (test_dac || (chip->ch_load[0] && !chip->ch_load[1]))
+            {
+                int sel = test_dac || chip->ch_sel;
+                chip->ch_output = sel ? chip->ch_buf[1][5] : chip->ch_buf[1][4];
+            }
+
+            if (chip->ch_load[0] && !chip->ch_load[1])
+            {
+                int sel = chip->ch_sel;
+                if (sel)
+                    chip->ch_pan = (chip->reg_b4[1][5] >> 6) & 3;
+                else
+                    chip->ch_pan = (chip->reg_b4[1][4] >> 6) & 3;
+            }
+
+            int dac_sel = test_dac || (chip->reg_dac_en[1] && chip->ch_ch6);
+
+            int ch_val;
+
+            if (dac_sel)
+            {
+                ch_val = (chip->reg_dac_data[1] ^ 0x80) << 1;
+                ch_val |= (chip->reg_test_2c[1] & 8) != 0;
+            }
+            else
+                ch_val = chip->ch_output;
+
+            int do_out = test_dac || chip->ch_load[0];
+            int sign;
+
+            if (ch_val & 256)
+            {
+                sign = -1;
+                ch_val |= ~0x1ff;
+            }
+            else
+            {
+                sign = 1;
+                ch_val++;
+            }
+
+            if (do_out && (chip->ch_pan & 2) != 0)
+                chip->o_mol = ch_val;
+            else
+                chip->o_mol = sign;
+            if (do_out && (chip->ch_pan & 1) != 0)
+                chip->o_mor = ch_val;
+            else
+                chip->o_mor = sign;
+        }
+
+        chip->o_test_d = (chip->reg_test_2c[1] & 128) == 0;
+    }
+#endif
 
 #undef ADDRESS_MATCH
 }

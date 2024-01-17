@@ -1,5 +1,7 @@
 #pragma once
 
+#define FMOPNA_YM2612
+
 typedef struct {
     int clk;
     int ic; // neg
@@ -28,20 +30,22 @@ typedef struct {
     int ic_latch2[2];
     int ic_latch3[2];
     int ic_check1;
-    int ic_check2;
     int ic_check3;
     int prescaler_latch[2];
+#ifndef FMOPNA_YM2612
+    int ic_check2;
     int prescaler_sel[2];
+#endif
     int pssel_l[15][2];
     int ic_latch_fm[2];
-
-    int dclk;
 
     int mclk1;
     int mclk2;
 
     int clk1;
     int clk2;
+
+#ifndef FMOPNA_YM2612
     int aclk1;
     int aclk2;
     int bclk1;
@@ -49,9 +53,20 @@ typedef struct {
     int cclk1;
     int cclk2;
 
+    int dclk;
+
     int ssg_write0;
     int ssg_write1;
     int ssg_read1;
+
+    int write2;
+    int write3;
+
+    int read2;
+    int read3;
+#endif
+
+    int read0;
 
     int write0_trig0;
     int write0_trig1;
@@ -63,6 +78,7 @@ typedef struct {
     int write1_l[3];
     int write1_en;
 
+#ifndef FMOPNA_YM2612
     int write2_trig0;
     int write2_trig1;
     int write2_l[3];
@@ -72,6 +88,7 @@ typedef struct {
     int write3_trig1;
     int write3_l[3];
     int write3_en;
+#endif
 
     int data_l;
 
@@ -80,9 +97,11 @@ typedef struct {
 
     int read_bus;
 
+#ifndef FMOPNA_YM2612
     int addr_10[2];
     int addr_10h[2];
     int addr_12[2];
+#endif
     int addr_21[2];
     int addr_22[2];
     int addr_24[2];
@@ -90,11 +109,20 @@ typedef struct {
     int addr_26[2];
     int addr_27[2];
     int addr_28[2];
+#ifndef FMOPNA_YM2612
     int addr_29[2];
     int addr_ff[2];
+#endif
+#ifdef FMOPNA_YM2612
+    int addr_2a[2];
+    int addr_2b[2];
+    int addr_2c[2];
+#endif
 
+#ifndef FMOPNA_YM2612
     int reg_mask[2];
     int reg_test_12[2];
+#endif
     int reg_test_21[2];
     int reg_lfo[2];
     int reg_timer_a[2];
@@ -106,10 +134,17 @@ typedef struct {
     int reg_timer_b_enable[2];
     int reg_timer_a_reset[2];
     int reg_timer_b_reset[2];
+#ifndef FMOPNA_YM2612
     int reg_sch[2];
     int reg_irq[2];
+#endif
     int reg_kon_operator[2];
     int reg_kon_channel[2];
+#ifdef FMOPNA_YM2612
+    int reg_dac_en[2];
+    int reg_dac_data[2];
+    int reg_test_2c[2];
+#endif
     int fm_address[2];
     int fm_data[2];
     int write_fm_address[2];
@@ -117,11 +152,13 @@ typedef struct {
     int reg_cnt1[2];
     int reg_cnt2[2];
     int reg_cnt_sync;
-    int reg_cnt_rss[2];
-    int reg_cnt_rss_of;
     int reg_key_cnt1[2];
     int reg_key_cnt2[2];
+#ifndef FMOPNA_YM2612
+    int reg_cnt_rss[2];
+    int reg_cnt_rss_of;
     int rss_18;
+#endif
     int reg_kon_match;
     int reg_kon[4][2];
     int kon_comb;
@@ -149,10 +186,12 @@ typedef struct {
     int timer_b_reg_load_l[2];
     int timer_b_status[2];
 
+#ifndef FMOPNA_YM2612
     int irq_eos_l;
     int irq_mask_eos;
     int irq_mask_brdy;
     int irq_mask_zero;
+#endif
 
     int fm_is30;
     int fm_is40;
@@ -179,7 +218,9 @@ typedef struct {
     int ch_cnt_sync;
     int ch_cnt1[2];
     int ch_cnt2[2];
+#ifndef FMOPNA_YM2612
     unsigned char reg_rss[2][6];
+#endif
     unsigned char op_multi_dt[2][12][2];
     unsigned char op_tl[2][12][2];
     unsigned char op_ar_ks[2][12][2];
@@ -190,7 +231,7 @@ typedef struct {
 
     int fsm_cnt1[2];
     int fsm_cnt2[2];
-    int fsm_out[22];
+    int fsm_out[27];
     int fsm_op1_sel_l;
     int fsm_op2_sel_l;
     int fsm_op3_sel_l;
@@ -204,24 +245,35 @@ typedef struct {
     int alg_output_l;
     int alg_do_fb[2];
     int alg_load_fb;
+#ifndef FMOPNA_YM2612
     int fsm_rss;
     int fsm_rss2;
+#endif
     int fsm_sel0[2];
     int fsm_sel1[2];
     int fsm_sel2[2];
-    int fsm_sel11[2];
     int fsm_sel23[2];
     int fsm_sel_ch3[2];
+#ifndef FMOPNA_YM2612
+    int fsm_sel11[2];
     int fsm_sh1[2];
     int fsm_sh2[2];
+#endif
+#ifdef FMOPNA_YM2612
+    int fsm_dac_ch6[2];
+    int fsm_dac_load[2];
+    int fsm_dac_out_sel[2];
+#endif
 
     int lfo_sync[4];
     int lfo_subcnt[2];
     int lfo_subcnt_of;
     int lfo_cnt_rst;
     int lfo_cnt[2];
+#ifndef FMOPNA_YM2612
     int lfo_cnt_of;
     int lfo_mode;
+#endif
     int lfo_cnt_load;
     int lfo_fnum1;
     int lfo_fnum2;
@@ -365,6 +417,7 @@ typedef struct {
     int op_do_fb;
     int op_fb;
 
+#ifndef FMOPNA_YM2612
     int ssg_prescaler1[2];
     int ssg_prescaler2[2];
     int ssg_div1[2];
@@ -469,12 +522,6 @@ typedef struct {
     int rss_dbg_data;
 
     int rss_pan[3];
-
-    int write2;
-    int write3;
-    int read0;
-    int read2;
-    int read3;
 
     int ad_is0;
     int ad_is1;
@@ -688,11 +735,14 @@ typedef struct {
     int opo_fm;
     int opo_da;
     int opo_ad;
+#endif
 
     int busy_cnt[2];
     int busy_cnt_en[2];
     int status_timer_a;
     int status_timer_b;
+    int eg_dbg;
+#ifndef FMOPNA_YM2612
     int status_eos;
     int status_brdy;
     int status_zero;
@@ -702,15 +752,31 @@ typedef struct {
     int zero_set;
     int eos_l[2];
     int eos_repeat;
-    int eg_dbg;
+#endif
 
+#ifdef FMOPNA_YM2612
+    int ch_op_output;
+    int ch_op_add;
+    int ch_accm_load;
+    short ch_accm[2][6];
+    short ch_buf[2][6];
+    int ch_output;
+    int ch_load[2];
+    int ch_sel;
+    int ch_dbg[2];
+    int ch_ch6;
+    int ch_pan;
+    int o_mol;
+    int o_mor;
+    int o_test;
+    int o_test_d;
+#endif
+
+#ifndef FMOPNA_YM2612
     int o_gpio_a;
     int o_gpio_a_d;
     int o_gpio_b;
     int o_gpio_b_d;
-    int o_irq_pull;
-    int o_data;
-    int o_data_d;
     float o_analog;
     int o_sh1;
     int o_sh2;
@@ -725,6 +791,10 @@ typedef struct {
     int o_ras; // neg
     int o_dm;
     int o_dm_d;
+#endif
+    int o_irq_pull;
+    int o_data;
+    int o_data_d;
 
     int tm_w1;
 } fmopna_t;
