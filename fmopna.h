@@ -2,10 +2,10 @@
 
 typedef struct {
     int clk;
-    int ic;
-    int cs;
-    int wr;
-    int rd;
+    int ic; // neg
+    int cs; // neg
+    int wr; // neg
+    int rd; // neg
     int a0;
     int a1;
     int data;
@@ -13,6 +13,7 @@ typedef struct {
     int gpio_b;
     int test; // set to 1
     int dt0;
+    int dm;
     int ad;
     int da;
 } fmopna_input_t;
@@ -78,11 +79,6 @@ typedef struct {
     int data_bus2; // inverted
 
     int read_bus;
-
-    int o_gpio_a;
-    int o_gpio_a_d;
-    int o_gpio_b;
-    int o_gpio_b_d;
 
     int addr_10[2];
     int addr_10h[2];
@@ -658,6 +654,10 @@ typedef struct {
     int ad_dsp_w69[2];
     int ad_da_data;
     int ad_ad_quiet;
+    int ad_mem_we[2];
+    int ad_mem_cas[2];
+    int ad_mem_ras[2];
+    int ad_mem_dir;
 
     int ac_da_shift[2];
     int ac_da_sync;
@@ -682,6 +682,10 @@ typedef struct {
     int ac_shifter_bit;
     int ac_shifter_top;
     int ac_opo;
+    int sh1_l;
+    int sh2_l;
+    int opo_fm;
+    int opo_da;
 
     int busy_cnt[2];
     int busy_cnt_en[2];
@@ -694,11 +698,31 @@ typedef struct {
     int brdy_flag;
     int zero_flag;
     int zero_set;
-    int o_irq_pull;
     int eos_l[2];
     int eos_repeat;
-
     int eg_dbg;
+
+    int o_gpio_a;
+    int o_gpio_a_d;
+    int o_gpio_b;
+    int o_gpio_b_d;
+    int o_irq_pull;
+    int o_data;
+    int o_data_d;
+    float o_analog;
+    int o_sh1;
+    int o_sh2;
+    int o_opo;
+    int o_s;
+    int o_spoff;
+    int o_a8;
+    int o_romcs;
+    int o_mden;
+    int o_we; // neg
+    int o_cas; // neg
+    int o_ras; // neg
+    int o_dm;
+    int o_dm_d;
 
     int tm_w1;
     int tm_w2;
