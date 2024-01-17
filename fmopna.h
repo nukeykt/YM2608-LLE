@@ -290,6 +290,7 @@ typedef struct {
     int eg_rate_low;
     int eg_rate_slow;
     int eg_maxrate[2];
+    int eg_inc2;
     int eg_incsh0[2];
     int eg_incsh1[2];
     int eg_incsh2[2];
@@ -332,7 +333,7 @@ typedef struct {
     int eg_out;
     int eg_dbg_sync;
     int eg_debug[2];
-    int eg_debug_inc[2];
+    int eg_debug_inc;
 
     int op_phase1;
     int op_phase2;
@@ -650,7 +651,7 @@ typedef struct {
     int ad_ad_cnt3_of[2];
     int ad_ad_cnt3_en[2];
     int ad_dsp_vol_o[2];
-    int ad_dsp_sregs2[2];
+    int ad_dsp_sregs2[2][2];
     int ad_dsp_w69[2];
     int ad_da_data;
     int ad_ad_quiet;
@@ -686,6 +687,7 @@ typedef struct {
     int sh2_l;
     int opo_fm;
     int opo_da;
+    int opo_ad;
 
     int busy_cnt[2];
     int busy_cnt_en[2];
@@ -725,12 +727,6 @@ typedef struct {
     int o_dm_d;
 
     int tm_w1;
-    int tm_w2;
-    int tm_w3;
-    int tm_w4;
-    int tm_w5;
-    int tm_w6;
-    int tm_w7;
 } fmopna_t;
 
 void FMOPNA_Clock(fmopna_t *chip, int clk);
