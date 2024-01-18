@@ -1409,7 +1409,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             int okon2 = (chip->eg_key[1] >> 21) & 1;
 
 
-            chip->eg_ssg_sign[0] = (chip->eg_level[1][19] & 0x200) != 0;
+            chip->eg_ssg_sign[0] = (chip->eg_level[1][18] & 0x200) != 0;
 
             int ssg_eg = chip->op_ssg[1][11][bank] & 15;
             int ssg_enable = (ssg_eg & 8) != 0;
@@ -1622,6 +1622,8 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             chip->eg_level_ssg[1] = chip->eg_level_ssg[0];
 
             chip->eg_pg_reset[1] = chip->eg_pg_reset[0];
+
+            chip->eg_ssg_sign[1] = chip->eg_ssg_sign[0];
 
             chip->eg_ssg_enable[1] = chip->eg_ssg_enable[0];
             chip->eg_ssg_dir[1] = chip->eg_ssg_dir[0];
