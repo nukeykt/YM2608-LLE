@@ -11,13 +11,15 @@ typedef struct {
     int a0;
     int a1;
     int data;
+    int test; // set to 1
+#ifndef FMOPNA_YM2612
     int gpio_a;
     int gpio_b;
-    int test; // set to 1
     int dt0;
     int dm;
     int ad;
     int da;
+#endif
 } fmopna_input_t;
 
 typedef struct {
@@ -341,6 +343,7 @@ typedef struct {
     int eg_rate15;
     int eg_rate_low;
     int eg_rate_slow;
+    int eg_rate_sum;
     int eg_maxrate[2];
     int eg_inc2;
     int eg_incsh0[2];
