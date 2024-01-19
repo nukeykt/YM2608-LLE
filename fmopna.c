@@ -3083,7 +3083,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
                         if (!chip->ad_mem_w22)
                         {
                             next_ptr |= 0x14|0x40;
-                            chip->ad_mem_ctrl |= 10011000000000;
+                            chip->ad_mem_ctrl |= 0b10011000000000;
                         }
                         if ((cond & 16) == 0 && chip->ad_mem_w22)
                         {
@@ -3092,7 +3092,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
                         if ((cond & 16) != 0 && chip->ad_mem_w22)
                         {
                             next_ptr |= 0x14|0x40;
-                            chip->ad_mem_ctrl |= 10011000000000;
+                            chip->ad_mem_ctrl |= 0b10011000000000;
                         }
                     }
                     else
@@ -3120,7 +3120,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
                         if ((cond & 16) != 0)
                         {
                             next_ptr |= 0x24|0x40;
-                            chip->ad_mem_ctrl |= 10011000000000;
+                            chip->ad_mem_ctrl |= 0b10011000000000;
                         }
                     }
                     else
