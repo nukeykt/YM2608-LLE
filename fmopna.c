@@ -2839,7 +2839,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
 
         int repeat = chip->ad_reg_repeat && code_end && !chip->ad_code_ed_end[1];
 
-        int w28 = repeat || (chip->ad_mode6_l[1] && !mode6);
+        int w28 = repeat || (!chip->ad_mode6_l[1] && mode6);
 
         int w6 = mode7 || mode9 || (w28 &&
             ((!chip->ad_reg_rom && chip->ad_reg_ramtype)
@@ -2859,7 +2859,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
         int p3 = chip->ad_reg_rec && !w18;
         int p4 = (!chip->ad_reg_rec && (w16 || !chip->ad_reg_memdata) && !w18) || p5;
 
-        int w23 = p1 || p3;
+        int w23 = p1 || p2;
 
         int w24 = (p4 && !chip->ad_reg_memdata) || (!chip->ad_start_l[2] && p1);
 
@@ -3141,7 +3141,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
                     chip->ad_mem_ctrl |= 0b10011000000000;
                     break;
                 case 0x3d:
-                    chip->ad_mem_ctrl |= 0b00111001100000;
+                    chip->ad_mem_ctrl |= 0b00111001000000;
                     break;
 
                 case 0x2f:
@@ -3261,10 +3261,12 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
 
             int rst = (chip->ad_mem_cond[1] & 2) != 0 || (chip->ad_start_sel[1] & 1) != 0;
 
-            chip->ad_stop_match2[0] = (((chip->ad_stop_match[0] & 11) == 11 || chip->ad_stop_match2[1])
+            int stop_match = (chip->ad_stop_match[0] & 11) == 11 && (chip->ad_end_sel[1] & 8) != 0;
+
+            chip->ad_stop_match2[0] = ((stop_match || chip->ad_stop_match2[1])
                 && !rst) || reset;
 
-            chip->ad_limit_match2[0] = (chip->ad_limit_match[0] & 11) == 11;
+            chip->ad_limit_match2[0] = (chip->ad_limit_match[0] & 11) == 11 && (chip->ad_end_sel[1] & 8) != 0;
 
             chip->ad_start_sel[0] = chip->ad_start_sel[1];
 
@@ -3507,6 +3509,8 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             chip->ad_mem_rw_en[1] = chip->ad_mem_rw_en[0];
 
             chip->ad_mem_ucnt[1] = chip->ad_mem_ucnt[0];
+
+            chip->ad_mem_w20[1] = chip->ad_mem_w20[0];
 
             chip->ad_mem_w21 = (chip->ad_mem_ctrl & 4) != 0 ||
                 (chip->ad_reg_ramtype && (chip->ad_mem_ctrl & 0x100) != 0) ||
@@ -4481,7 +4485,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
         chip->o_a8 = (chip->ad_mem_bus & 0x100) != 0;
 
         chip->o_romcs = !(chip->ad_reg_rom && (chip->ad_mem_ctrl_l & 1) != 0);
-        chip->o_mden = !(!chip->ad_reg_rom && (chip->ad_mem_ctrl_l & 1) != 0);
+        chip->o_mden = !chip->ad_reg_rom && (chip->ad_mem_ctrl_l & 1) != 0;
 
         chip->o_we = !chip->ad_mem_we[1];
         chip->o_cas = !chip->ad_mem_cas[1];

@@ -1,6 +1,6 @@
 #pragma once
 
-#define FMOPNA_YM2612
+// #define FMOPNA_YM2612
 
 typedef struct {
     int clk;
@@ -518,6 +518,7 @@ typedef struct {
     int rss_sample;
     int rss_multi_ctrl[2];
     int rss_multi_accum[2];
+    int rss_multi_accum_load;
     int rss_sample_multi;
     int rss_sample_shift_load;
     int rss_sample_shift;
@@ -787,7 +788,7 @@ typedef struct {
     int o_s;
     int o_spoff;
     int o_a8;
-    int o_romcs;
+    int o_romcs; // neg
     int o_mden;
     int o_we; // neg
     int o_cas; // neg
