@@ -195,6 +195,9 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
         chip->clk1 = clk1;
         chip->clk2 = clk2;
 
+        chip->aclk1 = aclk1;
+        chip->aclk2 = aclk2;
+
         chip->bclk1 = bclk1;
         chip->bclk2 = bclk2;
 
@@ -206,8 +209,8 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
 #endif
     }
 
-    //if (clk)
-    //    return;
+    // if (clk)
+    //     return;
 
     {
         int read = !chip->ic && !chip->input.rd && !chip->input.cs;
@@ -278,7 +281,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
         }
         chip->write2_en = chip->write2_l[0] && !chip->write2_l[2];
 
-        if (writeaddr)
+        if (writedata)
             chip->write3_trig0 = 1;
         else if (chip->write3_l[0])
             chip->write3_trig0 = 0;
@@ -2423,16 +2426,20 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
         if (chip->aclk2)
         {
             chip->rss_multi_ctrl[1] = chip->rss_multi_ctrl[0];
+
+            chip->rss_multi_accum[1] = chip->rss_multi_accum[0];
         }
 
         if (chip->rss_cnt1[1] == 5 && !chip->rss_sample_load)
         {
-            chip->rss_sample = chip->rss_regs[1][16];
+            chip->rss_sample = chip->rss_regs[1][16] & 0xfff;
+
+            chip->rss_multi_accum_load = chip->rss_multi_accum[1];
         }
 
         if (chip->rss_cnt1[1] == 0 && !chip->rss_sample_shift_load)
         {
-            int sample = chip->rss_multi_accum[1];
+            int sample = chip->rss_multi_accum_load;
             if (sample & 0x1000)
                 sample |= ~0x1fff;
             chip->rss_sample_shift = sample >> chip->rss_tl_shift[2];
@@ -2458,7 +2465,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
 
         if (chip->rss_eclk1)
         {
-            if (!chip->ic)
+            if (chip->ic)
             {
                 chip->rss_keydm[0] = 0;
                 chip->rss_keymask[0] = 0;
@@ -2532,7 +2539,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
         };
 
         static const int rss_adjust[8] = {
-            31, 31, 31, 31, 2, 5, 7, 9
+            63, 63, 63, 63, 2, 5, 7, 9
         };
 
         static const int rss_start[8] = {
@@ -2573,7 +2580,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
                 int c0 = !kon_event && !eos && chip->rss_step && (nibble & 8) != 0 && chip->rss_cnt1[1] == 5;
                 int c1 = !kon_event && !eos && chip->rss_step && (nibble & 8) == 0 && chip->rss_cnt1[1] == 5;
                 int c2 = !kon_event && chip->rss_step && chip->rss_cnt1[1] == 1;
-                int c3 = kon_event && chip->rss_cnt1[0] == 0;
+                int c3 = kon_event && chip->rss_cnt1[1] == 0;
                 int c4 = !kon_event && !eos && !stop && chip->rss_cnt1[1] == 0;
                 int c7 = (chip->rss_cnt1[1] == 2 && (nibble & 1) != 0) || (chip->rss_cnt1[1] == 3 && (nibble & 2) != 0)
                     || (chip->rss_cnt1[1] == 4 && (nibble & 4) != 0);
@@ -2644,12 +2651,12 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
                 }
             }
 
-            if (chip->rss_cnt1[1] != 5 && chip->rss_delta_ix_load)
+            if (chip->rss_cnt1[1] == 5 && !chip->rss_delta_ix_load)
             {
                 chip->rss_delta_ix = chip->rss_regs[1][14] & 63;
             }
 
-            if (chip->rss_cnt1[1] != 1 && chip->rss_ix_load)
+            if (chip->rss_cnt1[1] == 1 && !chip->rss_ix_load)
             {
                 chip->rss_ix = chip->rss_regs[1][14] & 0x7fff;
 
@@ -2663,7 +2670,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             if (chip->rss_cnt1[1] == 0)
             {
                 chip->rss_nibble = rss_rom[(chip->rss_ix >> 2) & 0x1fff];
-                if (chip->rss_ix & 1)
+                if (chip->rss_ix & 2)
                     chip->rss_nibble >>= 4;
                 else
                     chip->rss_nibble &= 15;
@@ -2672,6 +2679,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             if (chip->rss_fclk1)
             {
                 memcpy(&chip->rss_regs[0][1], &chip->rss_regs[1][0], 16 * sizeof(int));
+                chip->rss_regs[0][0] = chip->rss_accum[1];
             }
             if (chip->rss_fclk2)
             {
@@ -4495,7 +4503,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
 
             int accm1 = chip->ac_rss_sum_l;
             if (chip->ac_rss_sum_l & 0x8000)
-                chip->ac_rss_sum_l |= 0x30000;
+                accm1 |= 0x30000;
             if (!chip->ad_reg_rec && chip->ad_reg_l && chip->ad_start_l[2])
                 accm1 += chip->ac_ad_output;
             chip->ac_fm_accm1[0] = chip->ac_da_sync2 ? accm1 : chip->ac_fm_accm1[1];
@@ -4505,7 +4513,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
 
             int accm2 = chip->ac_rss_sum_r;
             if (chip->ac_rss_sum_r & 0x8000)
-                chip->ac_rss_sum_r |= 0x30000;
+                accm2 |= 0x30000;
             if (!chip->ad_reg_rec && chip->ad_reg_r && chip->ad_start_l[2])
                 accm2 += chip->ac_ad_output;
             chip->ac_fm_accm2[0] = chip->ac_da_sync ? accm2 : chip->ac_fm_accm2[1];
@@ -4533,7 +4541,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             chip->ac_da_sync3[1] = chip->ac_da_sync3[0];
 
             chip->ac_fm_accm1[1] = chip->ac_fm_accm1[0];
-            chip->ac_fm_accm2[1] = chip->ac_fm_accm1[0];
+            chip->ac_fm_accm2[1] = chip->ac_fm_accm2[0];
         }
 
         if (chip->rss_eclk1)
@@ -4542,12 +4550,12 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             if (chip->rss_sample_shift & 0x1000)
                 rss_sample |= 0xc000;
             int accm1 = chip->rss_cnt2[1] == 0 ? 0 : chip->ac_rss_accm1[1];
-            if (chip->rss_pan[1] & 2)
+            if (chip->rss_pan[2] & 2)
                 accm1 += rss_sample;
             chip->ac_rss_accm1[0] = accm1 & 0xffff;
 
             int accm2 = chip->rss_cnt2[1] == 0 ? 0 : chip->ac_rss_accm2[1];
-            if (chip->rss_pan[1] & 1)
+            if (chip->rss_pan[2] & 1)
                 accm2 += rss_sample;
             chip->ac_rss_accm2[0] = accm2 & 0xffff;
 
@@ -4628,8 +4636,6 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
 
             int clipl = chip->ac_shifter_top == 6 || (chip->ac_shifter_top & 6) == 4;
             int cliph = chip->ac_shifter_top == 1 || (chip->ac_shifter_top & 6) == 2;
-            clipl = 0;
-            cliph = 0;
 
             chip->ac_opo = cliph ? 1 : (clipl ? 0 : chip->ac_shifter_bit);
         }
