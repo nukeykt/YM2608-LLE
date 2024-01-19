@@ -3563,6 +3563,9 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             chip->data_bus1 |= chip->ad_mem_data_l3 & 255;
         }
 
+        if (!chip->ad_mem_dir)
+            chip->ad_mem_bus = chip->input.dm;
+
         if (chip->ad_mem_ctrl_l & 0x400)
             chip->ad_mem_bus = chip->ad_address_cnt[3][1];
         if (chip->ad_mem_ctrl_l & 0x80)
@@ -3866,10 +3869,12 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
                         chip->ad_code_ctrl = 0b000000000000000010000;
                     break;
                 case 0x11|0x40:
+                case 0x15|0x40:
                     chip->ad_code_ctrl = 0b011000101000100011000;
                     break;
                 case 0x12|0x40:
-                    chip->ad_code_ctrl = 0000000000000010010000;
+                case 0x16|0x40:
+                    chip->ad_code_ctrl = 0b000000000000010010000;
                     break;
                 case 0x13|0x40:
                     if ((chip->ad_mem_data_l4[0] & 128) == 0)
@@ -4048,13 +4053,17 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             chip->ad_dsp_bus = chip->ad_dsp_sregs2[0][1];
         if ((chip->ad_code_ctrl_l & 0x200) == 0 && (chip->ad_code_ctrl_l & 0x400) != 0)
             chip->ad_dsp_bus = chip->ad_dsp_sregs2[1][1];
+        if (chip->ad_dsp_ctrl == 7)
+            chip->ad_dsp_bus = 127;
+        if (chip->ad_dsp_ctrl == 5)
+            chip->ad_dsp_bus = 0;
 
         if (chip->cclk1)
         {
             chip->ad_dsp_delta_sel[0] = chip->ad_dsp_ctrl == 1;
 
             chip->ad_dsp_w30_l[0] = chip->ad_dsp_w30_l[1] << 1;
-            chip->ad_dsp_w30_l[0] |= w31;
+            chip->ad_dsp_w30_l[0] |= w30;
 
             chip->ad_dsp_w31_l[0] = chip->ad_dsp_w31_l[1] << 1;
             chip->ad_dsp_w31_l[0] |= w31;
