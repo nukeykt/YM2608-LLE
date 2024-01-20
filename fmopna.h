@@ -659,6 +659,7 @@ typedef struct {
     int ad_dsp_cnt2[2];
     int ad_dsp_ctrl10_l;
     int ad_dsp_load_alu1[2];
+    int ad_dsp_load_alu1_h;
     int ad_dsp_load_alu2[2];
     int ad_dsp_alu_in1;
     int ad_dsp_alu_in2;
@@ -682,7 +683,7 @@ typedef struct {
     int ad_ad_shift;
     int ad_ad_w53[2];
     int ad_ad_w55;
-    int ad_ad_w55_l;
+    int ad_ad_w55_l[2];
     int ad_ad_w56;
     int ad_ad_buf;
     int ad_set_eos;
@@ -710,6 +711,7 @@ typedef struct {
     int ad_mem_cas[2];
     int ad_mem_ras[2];
     int ad_mem_dir;
+    int ad_comp_da;
 
     int ac_da_shift[2];
     int ac_da_sync;
