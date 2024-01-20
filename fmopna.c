@@ -3049,7 +3049,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
                         }
                         if (!chip->ad_mem_w22)
                         {
-                            next_ptr |= 0x40|0x40;
+                            next_ptr |= 0x4|0x40;
                             chip->ad_mem_ctrl |= 0b10011000000000;
                         }
                         if ((cond & 16) == 0 && chip->ad_mem_w22)
