@@ -4612,7 +4612,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
 
             chip->ac_shifter_bit = chip->ac_shifter[1] & 1;
 
-            chip->opo_da = (chip->ac_da_shift[0] & (1 << 24)) != 0;
+            chip->opo_da[1] = chip->opo_da[0];
 
             chip->opo_fm = chip->ac_opo;
         }
@@ -4620,11 +4620,13 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
         {
             int set = chip->ac_da_w70[1] && chip->ac_da_sync;
 
-            int bit = !chip->ic && (chip->ac_da_shift[1] & (1 << 23)) != 0;
-            chip->ac_da_shift[0] = (chip->ac_da_shift[1] << 1) | bit;
+            chip->opo_da[0] = chip->ac_da_shift[1] & 1;
+
+            int bit = !chip->ic && (chip->ac_da_shift[1] & 1) != 0;
+            chip->ac_da_shift[0] = (chip->ac_da_shift[1] >> 1) | (bit << 23);
             if (set && !chip->ac_da_set[1])
             {
-                chip->ac_da_shift[0] &= ~(255 << 8);
+                chip->ac_da_shift[0] &= ~(0xffff << 8);
                 chip->ac_da_shift[0] |= chip->ad_da_data << 8;
             }
 
@@ -4684,7 +4686,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             chip->o_sh2 = chip->sh2_l;
 
         if (dac_damode)
-            chip->o_opo = chip->opo_da;
+            chip->o_opo = chip->opo_da[1];
         else if (dac_admode)
             chip->o_opo = chip->opo_ad;
         else

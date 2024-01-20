@@ -737,7 +737,7 @@ typedef struct {
     int sh1_l;
     int sh2_l;
     int opo_fm;
-    int opo_da;
+    int opo_da[2];
     int opo_ad;
 #endif
 
