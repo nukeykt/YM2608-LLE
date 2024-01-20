@@ -2850,7 +2850,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
 
         int w18 = !(chip->ad_mem_w17[1] && (sync || !chip->ad_reg_memdata));
 
-        int p5 = ((chip->ad_code_ctrl_l & 1) != 0 && !chip->ad_reg_rec && chip->ad_start_l[2] && (w16 || !chip->ad_reg_memdata));
+        int p5 = (chip->ad_code_ctrl_l & 1) != 0 && !chip->ad_reg_rec && chip->ad_start_l[2] && (w16 || !chip->ad_reg_memdata);
 
         int w19 = !(w18 && chip->ad_start_l[2] && !p5);
 
@@ -2866,7 +2866,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
         int w25 = p2 || p3;
 
         int w26 = mode5 && !chip->ad_rec_start_l[1];
-        int w27 = mode11 || (!chip->ad_reg_rom && w28);
+        int w27 = mode11 || (!chip->ad_reg_rom && w28 && !chip->ad_reg_ramtype);
 
         int w29 = w28 || w26 || mode10 || mode8; // start dsp
 
@@ -3180,6 +3180,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
                         if (cond & 4)
                         {
                             next_ptr |= 0x10 | 0x40;
+                            chip->ad_mem_ctrl = 0b00100000100000;
                         }
                         if (cond & 8)
                         {
