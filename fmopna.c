@@ -4075,7 +4075,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
 
             chip->ad_dsp_cnt1_run[0] = chip->ad_dsp_cnt1_run[1];
 
-            int accm2 = chip->ad_dsp_mul_accm2_add1 + chip->ad_dsp_mul_accm2_add2 + chip->ad_dsp_mul_accm1_c;;
+            int accm2 = chip->ad_dsp_mul_accm2_add1 + chip->ad_dsp_mul_accm2_add2 + chip->ad_dsp_mul_accm1_c;
 
             chip->ad_dsp_mul_accm1_add1 = (w35 & 1) != 0 ? chip->ad_dsp_w34 : 0;
             chip->ad_dsp_mul_accm1_add2 = cnt1 != 0 ? (chip->ad_dsp_mul_accm1[0] >> 1) | ((accm2 & 1) << 7) : 0;
@@ -4086,7 +4086,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
 
             chip->ad_dsp_mul_accm2_load = cnt1 != 0;
 
-            chip->ad_dsp_mul_accm2 = accm2;
+            chip->ad_dsp_mul_accm2 = accm2 & 0x1ff;
 
             chip->ad_dsp_w38[0] = chip->ad_dsp_w38[1] << 1;
             if (cnt1 != 0 && (chip->ad_dsp_mul_accm1[0] & 1) != 0)
@@ -4165,7 +4165,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
 
             chip->ad_dsp_w41[1] = chip->ad_dsp_w41[0];
 
-            int w42 = (chip->ad_dsp_mul_accm2 & 0x1c0) != 0x00 || (chip->ad_dsp_mul_accm2 & 0x30) == 0x10;
+            int w42 = (chip->ad_dsp_mul_accm2 & 0x1c0) != 0x00 || (chip->ad_dsp_mul_accm2 & 0x30) == 0x30;
 
             if (chip->ad_dsp_w41[0] & 2)
             {
