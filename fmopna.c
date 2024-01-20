@@ -3936,7 +3936,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
                     else
                         chip->ad_code_ctrl = 0b000001000000111010000;
                     break;
-                case 0x2a|0x40:
+                case 0x2b|0x40:
                     chip->ad_code_ctrl = 0b000000000000110001000;
                     vol_o = 1;
                     break;
