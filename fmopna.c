@@ -4055,7 +4055,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             chip->ad_dsp_bus = chip->ad_dsp_sregs2[1][1];
         if (chip->ad_dsp_ctrl == 7)
             chip->ad_dsp_bus = 127;
-        if (chip->ad_dsp_ctrl == 5)
+        if (chip->ad_dsp_ctrl == 15)
             chip->ad_dsp_bus = 0;
 
         if (chip->cclk1)
@@ -4444,7 +4444,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             else
                 i2 = chip->ad_dsp_alu_in2 >> chip->ad_dsp_alu_shift;
 
-            int c1 = chip->ad_dsp_carry_mode[1] && (chip->ad_dsp_alu_in1 & 1) != 0;
+            int c1 = chip->ad_dsp_carry_mode[1] && (chip->ad_dsp_alu_in2 & 1) != 0;
             int c2 = chip->ad_mem_nibble_msb;
 
             int neg = chip->ad_dsp_alu_neg[1] || c2;
