@@ -3731,7 +3731,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
                     if (chip->ad_dsp_enc_bit_l[1])
                     {
                         next_ptr = 0x20;
-                        chip->ad_code_ctrl = 0b100000100000000000100;
+                        chip->ad_code_ctrl = 0b100001000000000000100;
                     }
                     else
                         chip->ad_code_ctrl = 0b000000000000100010000;
