@@ -3519,6 +3519,15 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
 
             chip->ad_mem_w22 = chip->ad_mem_ucnt[0] == 0;
 
+            chip->ad_mem_we[1] = chip->ad_mem_we[0];
+            chip->ad_mem_cas[1] = chip->ad_mem_cas[0];
+            chip->ad_mem_ras[1] = chip->ad_mem_ras[0];
+
+            chip->ad_mem_dir = (chip->ad_mem_ctrl & 0x80) != 0 || (chip->ad_mem_ctrl & 0x400) != 0;
+        }
+
+        {
+
             int nibble_load;
             if (chip->ad_reg_rec)
                 nibble_load = (chip->ad_mem_shift_cnt[1] & 3) == 0 && !chip->ad_mem_shift_cnt0_l[1];
@@ -3539,12 +3548,6 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             }
 
             chip->ad_mem_nibble_msb = chip->ad_mem_w8[1] && (chip->ad_mem_nibble & 8) != 0;
-
-            chip->ad_mem_we[1] = chip->ad_mem_we[0];
-            chip->ad_mem_cas[1] = chip->ad_mem_cas[0];
-            chip->ad_mem_ras[1] = chip->ad_mem_ras[0];
-
-            chip->ad_mem_dir = (chip->ad_mem_ctrl & 0x80) != 0 || (chip->ad_mem_ctrl & 0x400) != 0;
         }
 
         int write8 = chip->ad_is8 && chip->write3;
@@ -3669,7 +3672,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
                     else
                     {
                         chip->ad_code_ctrl = 0b100010100000000000010;
-                        next_ptr = 0x12;
+                        next_ptr = 0xa;
                     }
                     break;
                 case 0x06:
@@ -3752,7 +3755,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
                     chip->ad_code_ctrl = 0b100000000000000100100;
                     break;
                 case 0x21:
-                    if (!chip->ad_dsp_alu_mask[1] && chip->ad_dsp_alu_shift == 3)
+                    if (!chip->ad_dsp_alu_mask[1] && chip->ad_dsp_alu_shift == 2)
                         chip->ad_code_ctrl = 0b000000000000000011000;
                     else
                     {
