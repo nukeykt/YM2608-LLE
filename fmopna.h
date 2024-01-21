@@ -1,6 +1,12 @@
 #pragma once
 
+// #define FMOPNA_YM2608
+#define FMOPNA_YM2610
 // #define FMOPNA_YM2612
+
+#if !defined(FMOPNA_YM2608) && !defined(FMOPNA_YM2610) && !defined(FMOPNA_YM2612)
+#error no chip type defined
+#endif
 
 typedef struct {
     int clk;
@@ -12,7 +18,7 @@ typedef struct {
     int a1;
     int data;
     int test; // set to 1
-#ifndef FMOPNA_YM2612
+#ifdef FMOPNA_YM2608
     int gpio_a;
     int gpio_b;
     int dt0;
@@ -36,6 +42,8 @@ typedef struct {
     int prescaler_latch[2];
 #ifndef FMOPNA_YM2612
     int ic_check2;
+#endif
+#ifdef FMOPNA_YM2608
     int prescaler_sel[2];
 #endif
     int pssel_l[15][2];
@@ -65,6 +73,8 @@ typedef struct {
     int write3;
 
     int read2;
+#endif
+#ifdef FMOPNA_YM2608
     int read3;
 #endif
 
@@ -80,12 +90,14 @@ typedef struct {
     int write1_l[3];
     int write1_en;
 
-#ifndef FMOPNA_YM2612
+#ifdef FMOPNA_YM2608
     int write2_trig0;
     int write2_trig1;
     int write2_l[3];
     int write2_en;
+#endif
 
+#ifndef FMOPNA_YM2612
     int write3_trig0;
     int write3_trig1;
     int write3_l[3];
@@ -99,7 +111,7 @@ typedef struct {
 
     int read_bus;
 
-#ifndef FMOPNA_YM2612
+#ifdef FMOPNA_YM2608
     int addr_10[2];
     int addr_10h[2];
     int addr_12[2];
@@ -111,9 +123,14 @@ typedef struct {
     int addr_26[2];
     int addr_27[2];
     int addr_28[2];
-#ifndef FMOPNA_YM2612
+#ifdef FMOPNA_YM2608
     int addr_29[2];
     int addr_ff[2];
+#endif
+#ifdef FMOPNA_YM2610
+    int addr_00[2];
+    int addr_02[2];
+    int addr_1c[2];
 #endif
 #ifdef FMOPNA_YM2612
     int addr_2a[2];
@@ -121,8 +138,10 @@ typedef struct {
     int addr_2c[2];
 #endif
 
-#ifndef FMOPNA_YM2612
+#ifdef FMOPNA_YM2608
     int reg_mask[2];
+#endif
+#ifndef FMOPNA_YM2612
     int reg_test_12[2];
 #endif
     int reg_test_21[2];
@@ -136,9 +155,12 @@ typedef struct {
     int reg_timer_b_enable[2];
     int reg_timer_a_reset[2];
     int reg_timer_b_reset[2];
-#ifndef FMOPNA_YM2612
+#ifdef FMOPNA_YM2608
     int reg_sch[2];
     int reg_irq[2];
+#endif
+#ifdef FMOPNA_YM2610
+    int reg_flags[2];
 #endif
     int reg_kon_operator[2];
     int reg_kon_channel[2];
@@ -156,7 +178,7 @@ typedef struct {
     int reg_cnt_sync;
     int reg_key_cnt1[2];
     int reg_key_cnt2[2];
-#ifndef FMOPNA_YM2612
+#ifdef FMOPNA_YM2608
     int reg_cnt_rss[2];
     int reg_cnt_rss_of;
     int rss_18;
@@ -190,6 +212,8 @@ typedef struct {
 
 #ifndef FMOPNA_YM2612
     int irq_eos_l;
+#endif
+#ifdef FMOPNA_YM2608
     int irq_mask_eos;
     int irq_mask_brdy;
     int irq_mask_zero;
@@ -220,7 +244,7 @@ typedef struct {
     int ch_cnt_sync;
     int ch_cnt1[2];
     int ch_cnt2[2];
-#ifndef FMOPNA_YM2612
+#ifdef FMOPNA_YM2608
     unsigned char reg_rss[2][6];
 #endif
     unsigned char op_multi_dt[2][12][2];
@@ -297,6 +321,9 @@ typedef struct {
     int pg_phase2[2];
     int pg_out;
     int pg_dbgsync;
+#ifdef FMOPNA_YM2610
+    int pg_dbgsync_l[2];
+#endif
     int pg_dbg[2];
     int dt_add1;
     int dt_add2;
@@ -421,8 +448,10 @@ typedef struct {
     int op_fb;
 
 #ifndef FMOPNA_YM2612
+#ifdef FMOPNA_YM2608
     int ssg_prescaler1[2];
     int ssg_prescaler2[2];
+#endif
     int ssg_div1[2];
     int ssg_div2[2];
     int ssg_div3[2];
@@ -499,7 +528,30 @@ typedef struct {
     int rss_key[2];
     int rss_stop[2];
     int rss_eos_l;
+#ifdef FMOPNA_YM2608
     int rss_step;
+#endif
+
+#ifdef FMOPNA_YM2610
+    int rss_address[2];
+    int rss_address_wr[2];
+    int rss_data[2];
+    int rss_data_wr[2];
+    int rss_write08;
+    int rss_write10;
+    int rss_write18;
+    int rss_write20;
+    int rss_write28;
+    unsigned char rss_reg_pan_tl[2][6];
+    unsigned char rss_reg_start_l[2][6];
+    unsigned char rss_reg_start_h[2][6];
+    unsigned char rss_reg_stop_l[2][6];
+    unsigned char rss_reg_stop_h[2][6];
+    int rss_fm_match_l;
+    int rss_params_start[3];
+    int rss_params_stop[3];
+    int rss_eos_load;
+#endif
 
     int rss_accum[2];
     int rss_regs[2][17];
@@ -778,16 +830,11 @@ typedef struct {
     int o_test_d;
 #endif
 
-#ifndef FMOPNA_YM2612
+#ifdef FMOPNA_YM2608
     int o_gpio_a;
     int o_gpio_a_d;
     int o_gpio_b;
     int o_gpio_b_d;
-    float o_analog;
-    int o_sh1;
-    int o_sh2;
-    int o_opo;
-    int o_s;
     int o_spoff;
     int o_a8;
     int o_romcs; // neg
@@ -797,6 +844,14 @@ typedef struct {
     int o_ras; // neg
     int o_dm;
     int o_dm_d;
+#endif
+
+#ifndef FMOPNA_YM2612
+    float o_analog;
+    int o_sh1;
+    int o_sh2;
+    int o_opo;
+    int o_s;
 #endif
     int o_irq_pull;
     int o_data;
