@@ -1,7 +1,5 @@
-#pragma once
-
 // #define FMOPNA_YM2608
-#define FMOPNA_YM2610
+// #define FMOPNA_YM2610
 // #define FMOPNA_YM2612
 
 #if !defined(FMOPNA_YM2608) && !defined(FMOPNA_YM2610) && !defined(FMOPNA_YM2612)
@@ -30,11 +28,24 @@ typedef struct {
     int rad;
     int pad;
 #endif
-} fmopna_input_t;
+}
+#ifdef FMOPNA_YM2608
+fmopna_input_t;
+#elif defined (FMOPNA_YM2610)
+fmopna_2610_input_t;
+#else
+fmopna_2612_input_t;
+#endif
 
 typedef struct {
 
+#ifdef FMOPNA_YM2608
     fmopna_input_t input;
+#elif defined (FMOPNA_YM2610)
+    fmopna_2610_input_t input;
+#else
+    fmopna_2612_input_t input;
+#endif
 
     int ic;
 

@@ -1,6 +1,5 @@
 #include <string.h>
-#include <stdio.h>
-#include "fmopna.h"
+#include "fmopna_impl.h"
 #ifdef FMOPNA_YM2608
 #include "fmopna_rom.h"
 #endif
