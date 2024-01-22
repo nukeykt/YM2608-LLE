@@ -2286,6 +2286,8 @@ void FMOPNA_2612_Clock(fmopna_2612_t* chip, int clk)
             chip->ssg_freq_cnt2[5] = chip->ssg_freq_cnt2[4];
             chip->ssg_freq_cnt2[7] = chip->ssg_freq_cnt2[6];
 
+            chip->ssg_sign[1] = chip->ssg_sign[0];
+
             int cnt_of = !chip->ssg_cnt_reload && (chip->ssg_sel_freq_l - chip->ssg_cnt_of_l < chip->ssg_freq_cnt2[0]);
 
             chip->ssg_cnt2_add = (chip->ssg_sel[1] & 8) != 0 && of;
@@ -2386,7 +2388,7 @@ void FMOPNA_2612_Clock(fmopna_2612_t* chip, int clk)
             chip->ssg_noise_bit = (chip->ssg_noise_lfsr[1] >> 16) & 1;
 
         int envlevel = chip->ssg_hold[0] ? 31 : chip->ssg_envcnt[0];
-        envlevel = (chip->ssg_dir[0] ^ ((chip->ssg_envmode >> 2) & 1)) ? (envlevel ^ 31) : envlevel;
+        envlevel = (chip->ssg_dir[0] ^ ((chip->ssg_envmode >> 2) & 1)) == 0 ? (envlevel ^ 31) : envlevel;
         envlevel = (chip->ssg_t2[0] && (chip->ssg_envmode & 8) == 0) ? 0 : envlevel;
 
         int vol_a = (chip->ssg_level_a & 0x10) != 0 ? envlevel : (((chip->ssg_level_a & 15) << 1) | 1);
@@ -2407,8 +2409,8 @@ void FMOPNA_2612_Clock(fmopna_2612_t* chip, int clk)
 
         chip->o_analog = 0;
         chip->o_analog += volume_lut[sign_a ? 0 : vol_a];
-        chip->o_analog += volume_lut[sign_b ? 0 : vol_a];
-        chip->o_analog += volume_lut[sign_c ? 0 : vol_a];
+        chip->o_analog += volume_lut[sign_b ? 0 : vol_b];
+        chip->o_analog += volume_lut[sign_c ? 0 : vol_c];
     }
 
     {
