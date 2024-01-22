@@ -1,7 +1,7 @@
 #pragma once
 
 // #define FMOPNA_YM2608
-#define FMOPNA_YM2610
+// #define FMOPNA_YM2610
 // #define FMOPNA_YM2612
 
 #if !defined(FMOPNA_YM2608) && !defined(FMOPNA_YM2610) && !defined(FMOPNA_YM2612)
@@ -25,6 +25,10 @@ typedef struct {
     int dm;
     int ad;
     int da;
+#endif
+#ifdef FMOPNA_YM2610
+    int rad;
+    int pad;
 #endif
 } fmopna_input_t;
 
@@ -296,7 +300,7 @@ typedef struct {
     int lfo_subcnt_of;
     int lfo_cnt_rst;
     int lfo_cnt[2];
-#ifndef FMOPNA_YM2612
+#ifdef FMOPNA_YM2608
     int lfo_cnt_of;
     int lfo_mode;
 #endif
@@ -530,6 +534,7 @@ typedef struct {
     int rss_eos_l;
 #ifdef FMOPNA_YM2608
     int rss_step;
+    int rss_isend;
 #endif
 
 #ifdef FMOPNA_YM2610
@@ -549,8 +554,13 @@ typedef struct {
     unsigned char rss_reg_stop_h[2][6];
     int rss_fm_match_l;
     int rss_params_start[3];
+    int rss_params_start_h;
     int rss_params_stop[3];
     int rss_eos_load;
+    int rss_rmpx[2];
+    int rss_roe[2];
+    int rss_rad_bus;
+    int rss_stop_flag[2];
 #endif
 
     int rss_accum[2];
@@ -560,7 +570,6 @@ typedef struct {
     int rss_delta_ix;
     int rss_ix_load;
     int rss_ix;
-    int rss_isend;
     int rss_cnt1_is1;
     int rss_nibble;
     int rss_tl_l;
@@ -579,32 +588,94 @@ typedef struct {
 
     int rss_pan[3];
 
+#ifdef FMOPNA_YM2608
+    int ad_is6;
+    int ad_is7;
+    int ad_is8;
+    int ad_isc;
+    int ad_isd;
+    int ad_ise;
+    int ad_isf;
+    int ad_reg_limit_l;
+    int ad_reg_limit_h;
+    int ad_reg_prescale_l;
+    int ad_reg_prescale_h;
+    int ad_reg_spoff;
+    int ad_reg_memdata;
+    int ad_reg_rec;
+    int ad_reg_rom;
+    int ad_reg_ramtype;
+    int ad_reg_da_ad;
+    int ad_reg_sample;
+    int ad_sample_l[3];
+    int ad_read_port_l[2];
+    int ad_write_port_l[2];
+    int ad_rw_l[2];
+    int ad_rw_en;
+    int ad_rec_start_l[2];
+    int ad_limit_match[2];
+    int ad_limit_match2[2];
+    int ad_mem_sync[2];
+    int ad_mem_sync_run;
+    int ad_mem_ptr_store;
+    int ad_mem_data_l1;
+    int ad_mem_data_l2;
+    int ad_mem_addr_bank;
+    int ad_mem_data_bus;
+    int ad_mem_bit_cnt[2];
+    int ad_mem_shift_cnt0_l[2];
+    int ad_brdy_set_l[2];
+    int ad_mem_rw_en[2];
+    int ad_mem_ucnt[2];
+    int ad_mem_w22;
+    int ad_dsp_ctrl10_l;
+    int ad_dsp_alu_neg[2];
+    int ad_ad_cnt1[2];
+    int ad_ad_cmp_i;
+    int ad_ad_shift;
+    int ad_ad_w53[2];
+    int ad_ad_w55;
+    int ad_ad_w55_l[2];
+    int ad_ad_w56;
+    int ad_ad_buf;
+    int ad_ad_input;
+    int ad_ad_cnt2[2];
+    int ad_ad_w57[3];
+    int ad_ad_w58[3]; // sh2
+    int ad_ad_w60;
+    int ad_ad_w61[2]; // opo
+    int ad_ad_w62[2];
+    int ad_ad_w65_l;
+    int ad_ad_w66[2];
+    int ad_ad_w68;
+    int ad_ad_cnt3[2];
+    int ad_ad_cnt3_load;
+    int ad_ad_cnt3_load_val;
+    int ad_ad_cnt3_of[2];
+    int ad_ad_cnt3_en[2];
+    int ad_ad_quiet;
+    int ad_comp_da;
+    int ad_dsp_enc_bit;
+    int ad_dsp_enc_bit_l[2];
+    int ad_mem_we[2];
+    int ad_mem_cas[2];
+    int ad_mem_ras[2];
+#else
+    int ad_mem_pmpx[2];
+    int ad_mem_poe[2];
+#endif
     int ad_is0;
     int ad_is1;
     int ad_is2;
     int ad_is3;
     int ad_is4;
     int ad_is5;
-    int ad_is6;
-    int ad_is7;
-    int ad_is8;
     int ad_is9;
     int ad_isa;
     int ad_isb;
-    int ad_isc;
-    int ad_isd;
-    int ad_ise;
-    int ad_isf;
     int ad_reg_reset;
-    int ad_reg_spoff;
     int ad_reg_repeat;
-    int ad_reg_memdata;
-    int ad_reg_rec;
     int ad_reg_start;
-    int ad_reg_rom;
-    int ad_reg_ramtype;
-    int ad_reg_da_ad;
-    int ad_reg_sample;
     int ad_reg_r;
     int ad_reg_l;
     int ad_reg_delta_l;
@@ -613,22 +684,12 @@ typedef struct {
     int ad_reg_start_h;
     int ad_reg_stop_l;
     int ad_reg_stop_h;
-    int ad_reg_limit_l;
-    int ad_reg_limit_h;
-    int ad_reg_prescale_l;
-    int ad_reg_prescale_h;
     int ad_reg_level;
     int ad_code_ptr[2];
     int ad_code_ctrl;
     int ad_code_ctrl_l;
-    int ad_sample_l[3];
-    int ad_read_port_l[2];
-    int ad_write_port_l[2];
-    int ad_rw_l[2];
-    int ad_rw_en;
     int ad_w2[2];
     int ad_w4[2];
-    int ad_w5;
     int ad_start_l[3];
     int ad_w2_l[2];
     int ad_code_end[2];
@@ -639,31 +700,20 @@ typedef struct {
     int ad_mem_code_ptr[2];
     int ad_end_sel[2];
     int ad_stop_match[2];
-    int ad_limit_match[2];
     int ad_stop_match2[2];
-    int ad_limit_match2[2];
     int ad_start_sel[2];
     int ad_address_cnt[4][2];
     int ad_address_carry[2];
     int ad_mem_cond[2];
-    int ad_mem_sync[2];
-    int ad_mem_sync_run;
-    int ad_mem_ptr_store;
     int ad_mem_bus;
-    int ad_mem_data_l1;
-    int ad_mem_data_l2;
     int ad_mem_data_l3;
     int ad_mem_data_l4[2];
-    int ad_mem_addr_bank;
-    int ad_mem_data_bus;
-    int ad_mem_bit_cnt[2];
     int ad_mem_w7[2];
     int ad_mem_shift_cnt[2];
     int ad_mem_nibble;
     int ad_mem_w8[2];
     int ad_mem_nibble_msb;
     int ad_mem_nibble_load;
-    int ad_mem_shift_cnt0_l[2];
     int ad_mem_mem_en_l[2];
     int ad_code_ed_end[2];
     int ad_mem_mem_stop[2];
@@ -671,14 +721,9 @@ typedef struct {
     int ad_w12[2];
     int ad_w13[2];
     int ad_mem_w15[2];
-    int ad_brdy_set_l[2];
     int ad_mem_w17[2];
-    int ad_mem_rw_en[2];
     int ad_mem_w20[2];
-    int ad_mem_ucnt[2];
     int ad_mem_w21;
-    int ad_mem_w22;
-    int ad_rec_start_l[2];
     int ad_mode6_l[2];
     int ad_dsp_bus;
     int ad_dsp_ctrl;
@@ -709,7 +754,6 @@ typedef struct {
     int ad_dsp_w46[2];
     int ad_output;
     int ad_dsp_cnt2[2];
-    int ad_dsp_ctrl10_l;
     int ad_dsp_load_alu1[2];
     int ad_dsp_load_alu1_h;
     int ad_dsp_load_alu2[2];
@@ -719,62 +763,36 @@ typedef struct {
     int ad_dsp_alu_res;
     int ad_dsp_alu_shift;
     int ad_dsp_alu_mask[2];
-    int ad_dsp_alu_neg[2];
     int ad_dsp_carry_mode[2];
     int ad_dsp_alu_of;
     int ad_dsp_read_res[2];
-    int ad_dsp_enc_bit;
     int ad_code_sync[3];
-    int ad_dsp_enc_bit_l[2];
     int ad_dsp_w52[2];
     int ad_code_reg_id;
     int ad_dsp_regs[8];
     int ad_dsp_regs_o;
-    int ad_ad_cnt1[2];
-    int ad_ad_cmp_i;
-    int ad_ad_shift;
-    int ad_ad_w53[2];
-    int ad_ad_w55;
-    int ad_ad_w55_l[2];
-    int ad_ad_w56;
-    int ad_ad_buf;
     int ad_set_eos;
-    int ad_ad_input;
-    int ad_ad_cnt2[2];
-    int ad_ad_w57[3];
-    int ad_ad_w58[3]; // sh2
-    int ad_ad_w60;
-    int ad_ad_w61[2]; // opo
-    int ad_ad_w62[2];
-    int ad_ad_w65_l;
-    int ad_ad_w66[2];
-    int ad_ad_w68;
-    int ad_ad_cnt3[2];
-    int ad_ad_cnt3_load;
-    int ad_ad_cnt3_load_val;
-    int ad_ad_cnt3_of[2];
-    int ad_ad_cnt3_en[2];
     int ad_dsp_vol_o[2];
     int ad_dsp_sregs2[2][2];
     int ad_dsp_w69[2];
-    int ad_da_data;
-    int ad_ad_quiet;
-    int ad_mem_we[2];
-    int ad_mem_cas[2];
-    int ad_mem_ras[2];
     int ad_mem_dir;
-    int ad_comp_da;
 
+#ifdef FMOPNA_YM2608
+    int ad_da_data;
     int ac_da_shift[2];
-    int ac_da_sync;
     int ac_da_w70[2];
     int ac_da_set[2];
+    int opo_da[2];
+    int opo_ad;
+#endif
+
     int ac_fm_output;
     int ac_fm_output_en;
     int ac_fm_pan;
     int ac_fm_accm1[2];
     int ac_da_sync2;
     int ac_ad_output;
+    int ac_da_sync;
     int ac_da_sync3[2];
     int ac_fm_accm2[2];
     int ac_rss_sum_l;
@@ -791,8 +809,6 @@ typedef struct {
     int sh1_l;
     int sh2_l;
     int opo_fm;
-    int opo_da[2];
-    int opo_ad;
 #endif
 
     int busy_cnt[2];
@@ -800,14 +816,31 @@ typedef struct {
     int status_timer_a;
     int status_timer_b;
     int eg_dbg;
-#ifndef FMOPNA_YM2612
-    int status_eos;
+#ifdef FMOPNA_YM2608
     int status_brdy;
     int status_zero;
-    int eos_flag;
     int brdy_flag;
     int zero_flag;
     int zero_set;
+#endif
+#ifdef FMOPNA_YM2610
+    int flag_rss_0;
+    int flag_rss_1;
+    int flag_rss_2;
+    int flag_rss_3;
+    int flag_rss_4;
+    int flag_rss_5;
+    int status_rss_0;
+    int status_rss_1;
+    int status_rss_2;
+    int status_rss_3;
+    int status_rss_4;
+    int status_rss_5;
+#endif
+
+#ifndef FMOPNA_YM2612
+    int status_eos;
+    int eos_flag;
     int eos_l[2];
     int eos_repeat;
 #endif
@@ -844,6 +877,21 @@ typedef struct {
     int o_ras; // neg
     int o_dm;
     int o_dm_d;
+#endif
+
+#ifdef FMOPNA_YM2610
+    int o_rmpx;
+    int o_roe; // neg
+    int o_rad;
+    int o_rad_d;
+    int o_ra8;
+    int o_ra20;
+
+    int o_pmpx;
+    int o_poe; // neg
+    int o_pad;
+    int o_pad_d;
+    int o_pa8;
 #endif
 
 #ifndef FMOPNA_YM2612
