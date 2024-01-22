@@ -1,2 +1,2 @@
 #define FMOPNA_YM2608
-#include "fmopna.c"
+#include "fmopna_impl.c"
