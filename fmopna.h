@@ -1,7 +1,7 @@
 #pragma once
 
 // #define FMOPNA_YM2608
-// #define FMOPNA_YM2610
+#define FMOPNA_YM2610
 // #define FMOPNA_YM2612
 
 #if !defined(FMOPNA_YM2608) && !defined(FMOPNA_YM2610) && !defined(FMOPNA_YM2612)
@@ -558,7 +558,7 @@ typedef struct {
     int rss_params_stop[3];
     int rss_eos_load;
     int rss_rmpx[2];
-    int rss_roe[2];
+    int rss_roe[4];
     int rss_rad_bus;
     int rss_stop_flag[2];
 #endif
@@ -906,6 +906,20 @@ typedef struct {
     int o_data_d;
 
     int tm_w1;
-} fmopna_t;
+}
+#ifdef FMOPNA_YM2608
+fmopna_t;
+#elif defined (FMOPNA_YM2610)
+fmopna_2610_t;
+#else
+fmopna_2612_t;
+#endif
 
-void FMOPNA_Clock(fmopna_t *chip, int clk);
+#ifdef FMOPNA_YM2608
+void FMOPNA_Clock(fmopna_t* chip, int clk);
+#elif defined (FMOPNA_YM2610)
+void FMOPNA_2610_Clock(fmopna_2610_t* chip, int clk);
+#else
+void FMOPNA_2612_Clock(fmopna_2612_t* chip, int clk);
+#endif
+

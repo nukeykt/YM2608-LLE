@@ -48,7 +48,13 @@ static const int fm_algorithm[4][6][8] = {
 };
 
 
-void FMOPNA_Clock(fmopna_t *chip, int clk)
+#ifdef FMOPNA_YM2608
+void FMOPNA_Clock(fmopna_t* chip, int clk)
+#elif defined (FMOPNA_YM2610)
+void FMOPNA_2610_Clock(fmopna_2610_t* chip, int clk)
+#else
+void FMOPNA_2612_Clock(fmopna_2612_t* chip, int clk)
+#endif
 {
     int i;
 
@@ -2526,17 +2532,41 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
                 if (chip->rss_write08)
                 {
                     chip->rss_reg_pan_tl[0][0] = chip->rss_data[1] & 0xdf;
-                    chip->rss_reg_start_l[0][0] = chip->rss_data[1];
-                    chip->rss_reg_start_h[0][0] = chip->rss_data[1];
-                    chip->rss_reg_stop_l[0][0] = chip->rss_data[1];
-                    chip->rss_reg_stop_h[0][0] = chip->rss_data[1] & 0xf;
                 }
                 else
                 {
                     chip->rss_reg_pan_tl[0][0] = chip->rss_reg_pan_tl[1][5];
+                }
+                if (chip->rss_write10)
+                {
+                    chip->rss_reg_start_l[0][0] = chip->rss_data[1];
+                }
+                else
+                {
                     chip->rss_reg_start_l[0][0] = chip->rss_reg_start_l[1][5];
+                }
+                if (chip->rss_write18)
+                {
+                    chip->rss_reg_start_h[0][0] = chip->rss_data[1];
+                }
+                else
+                {
                     chip->rss_reg_start_h[0][0] = chip->rss_reg_start_h[1][5];
+                }
+                if (chip->rss_write20)
+                {
+                    chip->rss_reg_stop_l[0][0] = chip->rss_data[1];
+                }
+                else
+                {
                     chip->rss_reg_stop_l[0][0] = chip->rss_reg_stop_l[1][5];
+                }
+                if (chip->rss_write28)
+                {
+                    chip->rss_reg_stop_h[0][0] = chip->rss_data[1] & 0xf;
+                }
+                else
+                {
                     chip->rss_reg_stop_h[0][0] = chip->rss_reg_stop_h[1][5];
                 }
             }
@@ -2634,7 +2664,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
             chip->rss_multi_ctrl[0] = chip->rss_multi_ctrl[1] >> 1;
             if (load)
             {
-                chip->rss_multi_ctrl[0] |= (15 - (tl & 7)) << 2;
+                chip->rss_multi_ctrl[0] |= (15 - (tl & 7)) << 1;
             }
 
             chip->rss_sample_load = chip->rss_cnt1[1] == 5;
@@ -3027,6 +3057,7 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
         }
         chip->o_ra8 = is1_2 ? (chip->rss_ix >> 9) & 3 : (chip->rss_ix >> 19) & 3;
         chip->o_ra20 = chip->rss_params_start_h;
+        chip->o_rad = chip->rss_rad_bus;
         chip->o_rad_d = !io_dir;
 #endif
     }
@@ -4015,11 +4046,11 @@ void FMOPNA_Clock(fmopna_t *chip, int clk)
                     if (chip->ad_stop_match2[1])
                         next_ptr = 0xf | 0x10;
                     if ((chip->ad_mem_cond[1] & 1) == 0)
-                        next_ptr = 0x9 | 0x10;
+                        next_ptr |= 0x9 | 0x10;
                     else
                     {
                         chip->ad_mem_ctrl = 0b01010000;
-                        next_ptr = 0x2 | 0x10;
+                        next_ptr |= 0x2 | 0x10;
                     }
                     break;
                 case 0xf:
