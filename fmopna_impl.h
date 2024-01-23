@@ -1,3 +1,28 @@
+/*
+ * Copyright (C) 2023-2024 nukeykt
+ *
+ * This file is part of YM2608-LLE.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ *  YM2608/YM2610/YM2612 emulator.
+ *  Thanks:
+ *      Raki (ika-musume):
+ *          YM2608B decap
+ *      John McMaster (siliconpr0n.org):
+ *          YM2610 decap
+ *      HardWareMan:
+ *          YM2612 decap
+ *
+ */
 // #define FMOPNA_YM2608
 // #define FMOPNA_YM2610
 // #define FMOPNA_YM2612
