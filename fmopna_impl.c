@@ -2791,7 +2791,7 @@ void FMOPNA_2612_Clock(fmopna_2612_t* chip, int clk)
 
             chip->rss_stop_flag[0] = 0;
             if (!stop && eos)
-                chip->rss_stop_flag[0] |= chip->rss_cnt2[1];
+                chip->rss_stop_flag[0] |= 1 << chip->rss_cnt2[1];
 #endif
 
         }
