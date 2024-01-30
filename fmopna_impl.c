@@ -1280,8 +1280,7 @@ void FMOPNA_2612_Clock(fmopna_2612_t* chip, int clk)
             chip->lfo_mode = chip->ad_sample_l[2] || (chip->ad_reg_rec && chip->ad_start_l[1]);
             chip->lfo_subcnt_of = chip->lfo_mode ? (chip->lfo_subcnt[0] & 127) == 127 : of;
             chip->lfo_cnt_rst = chip->lfo_mode ? chip->ad_ad_quiet : (chip->reg_lfo[0] & 8) == 0;
-#endif
-#ifdef FMOPNA_YM2612
+#else
             chip->lfo_subcnt_of = of;
             chip->lfo_cnt_rst = (chip->reg_lfo[0] & 8) == 0;
 #endif
