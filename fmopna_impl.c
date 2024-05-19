@@ -277,7 +277,7 @@ void FMOPNA_2612_Clock(fmopna_2612_t* chip, int clk)
 #endif
     }
 
-    // if (clk)
+    // if (!clk)
     //     return;
 
     {
@@ -5786,7 +5786,7 @@ void FMOPNA_2612_Clock(fmopna_2612_t* chip, int clk)
         {
             chip->ch_op_output = (chip->op_output[2] >> 5) & 0x1ff;
             chip->ch_op_add = chip->alg_output_l;
-            chip->ch_accm_load = chip->alg_mod_op1_1_l;
+            chip->ch_accm_load = chip->alg_load_fb;
             memcpy(&chip->ch_accm[1][0], &chip->ch_accm[0][0], 6 * sizeof(short));
             memcpy(&chip->ch_buf[1][0], &chip->ch_buf[0][0], 6 * sizeof(short));
 
