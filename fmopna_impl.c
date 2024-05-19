@@ -118,14 +118,23 @@ void FMOPNA_2612_Clock(fmopna_2612_t* chip, int clk)
 #endif
 #ifdef FMOPNA_YM2612
         prescaler_of = (chip->prescaler_latch[1] & 0x1f) == 0;
-#endif
-        chip->ic_latch1[0] = chip->ic;
 
+        int ic_check1 = chip->ic && (chip->ic_latch2[1] & 0x800) == 0;
+
+        chip->ic_latch2[0] = (chip->ic_latch2[1] << 1) | chip->ic;
+        chip->ic_latch3[0] = (chip->ic_latch3[1] << 1) | ic_check1;
+
+        chip->prescaler_latch[0] = chip->prescaler_latch[1] << 1;
+        chip->prescaler_latch[0] |= !ic_check1 && prescaler_of;
+
+#else
+        chip->ic_latch1[0] = chip->ic;
         chip->ic_latch2[0] = (chip->ic_latch2[1] << 1) | chip->ic_latch1[1];
         chip->ic_latch3[0] = (chip->ic_latch3[1] << 1) | chip->ic_check1;
 
         chip->prescaler_latch[0] = chip->prescaler_latch[1] << 1;
         chip->prescaler_latch[0] |= !chip->ic_check1 && prescaler_of;
+#endif
 
 #ifdef FMOPNA_YM2608
         chip->pssel_l[0][0] = (chip->prescaler_latch[1] & 0x861) != 0;
@@ -167,15 +176,15 @@ void FMOPNA_2612_Clock(fmopna_2612_t* chip, int clk)
     }
     if (chip->mclk2)
     {
+#ifndef FMOPNA_YM2612
         chip->ic_latch1[1] = chip->ic_latch1[0];
+#endif
         chip->ic_latch2[1] = chip->ic_latch2[0];
         chip->ic_latch3[1] = chip->ic_latch3[0];
 
 #ifndef FMOPNA_YM2612
         chip->ic_check1 = chip->ic_latch1[1] && (chip->ic_latch2[1] & 0x20000) == 0;
         chip->ic_check2 = (chip->ic_latch3[1] & 4) != 0;
-#else
-        chip->ic_check1 = chip->ic_latch1[1] && (chip->ic_latch2[1] & 0x800) == 0;
 #endif
         chip->ic_check3 = (chip->ic_latch3[1] & 8) != 0;
 
