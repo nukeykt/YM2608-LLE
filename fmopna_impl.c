@@ -2439,6 +2439,9 @@ void FMOPNA_2612_Clock(fmopna_2612_t* chip, int clk)
         chip->o_analog += volume_lut[sign_a ? 0 : vol_a];
         chip->o_analog += volume_lut[sign_b ? 0 : vol_b];
         chip->o_analog += volume_lut[sign_c ? 0 : vol_c];
+        
+        chip->o_gpio_a_d = (chip->ssg_mode & 64) == 0;
+        chip->o_gpio_b_d = (chip->ssg_mode & 128) == 0;
     }
 
     {
