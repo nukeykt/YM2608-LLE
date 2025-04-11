@@ -2260,8 +2260,8 @@ void FMOPNA_2612_Clock(fmopna_2612_t* chip, int clk)
                     break;
 #ifdef FMOPNA_YM2608
                 case 0xe:
-                    chip->data_bus1 &= ~15;
-                    chip->data_bus1 |= chip->input.gpio_a & 15;
+                    chip->data_bus1 &= ~255;
+                    chip->data_bus1 |= chip->input.gpio_a & 255;
                     break;
                 case 0xf:
                     chip->data_bus1 &= ~255;
