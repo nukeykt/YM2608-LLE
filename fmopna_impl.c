@@ -475,8 +475,6 @@ void FMOPNA_2612_Clock(fmopna_2612_t* chip, int clk)
                 chip->reg_timer_b_load[0] = 0;
                 chip->reg_timer_a_enable[0] = 0;
                 chip->reg_timer_b_enable[0] = 0;
-                chip->reg_timer_a_reset[0] = 0;
-                chip->reg_timer_b_reset[0] = 0;
                 chip->reg_kon_operator[0] = 0;
                 chip->reg_kon_channel[0] = 0;
 #ifdef FMOPNA_YM2608
@@ -582,8 +580,6 @@ void FMOPNA_2612_Clock(fmopna_2612_t* chip, int clk)
                     chip->reg_timer_b_load[0] = (chip->data_bus1 >> 1) & 1;
                     chip->reg_timer_a_enable[0] = (chip->data_bus1 >> 2) & 1;
                     chip->reg_timer_b_enable[0] = (chip->data_bus1 >> 3) & 1;
-                    chip->reg_timer_a_reset[0] = (chip->data_bus1 >> 4) & 1;
-                    chip->reg_timer_b_reset[0] = (chip->data_bus1 >> 5) & 1;
                 }
                 else
                 {
@@ -592,8 +588,6 @@ void FMOPNA_2612_Clock(fmopna_2612_t* chip, int clk)
                     chip->reg_timer_b_load[0] = chip->reg_timer_b_load[1];
                     chip->reg_timer_a_enable[0] = chip->reg_timer_a_enable[1];
                     chip->reg_timer_b_enable[0] = chip->reg_timer_b_enable[1];
-                    chip->reg_timer_a_reset[0] = 0;
-                    chip->reg_timer_b_reset[0] = 0;
                 }
                 if (chip->addr_28[1] && (chip->data_bus1 & 0x100) == 0 && chip->write1_en)
                 {
@@ -644,6 +638,8 @@ void FMOPNA_2612_Clock(fmopna_2612_t* chip, int clk)
                 }
 #endif
             }
+            chip->reg_timer_a_reset[0] = chip->addr_27[1] && (chip->data_bus1 & 0x100) == 0 && chip->write1_en && ((chip->data_bus1 >> 4) & 1) != 0;
+            chip->reg_timer_b_reset[0] = chip->addr_27[1] && (chip->data_bus1 & 0x100) == 0 && chip->write1_en && ((chip->data_bus1 >> 5) & 1) != 0;
 
             int rst1 = chip->reg_cnt_sync || chip->ic;
             int of = (chip->reg_cnt1[1] & 2) != 0;
@@ -1341,7 +1337,7 @@ void FMOPNA_2612_Clock(fmopna_2612_t* chip, int clk)
             chip->pg_add[4] = chip->pg_add[3];
 
             chip->pg_reset[1] = chip->pg_reset[0];
-            chip->pg_reset[3] = chip->pg_reset[2];
+            chip->pg_reset[3] = chip->pg_reset[2] || (chip->reg_test_21 & 8) != 0;
 
             memcpy(&chip->pg_phase[0][1], &chip->pg_phase[1][0], 22 * sizeof(int));
 
