@@ -1337,7 +1337,7 @@ void FMOPNA_2612_Clock(fmopna_2612_t* chip, int clk)
             chip->pg_add[4] = chip->pg_add[3];
 
             chip->pg_reset[1] = chip->pg_reset[0];
-            chip->pg_reset[3] = chip->pg_reset[2] || (chip->reg_test_21 & 8) != 0;
+            chip->pg_reset[3] = chip->pg_reset[2] || (chip->reg_test_21[1] & 8) != 0;
 
             memcpy(&chip->pg_phase[0][1], &chip->pg_phase[1][0], 22 * sizeof(int));
 
